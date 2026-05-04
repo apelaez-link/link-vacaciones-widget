@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+/dist/
+/build/
+src-tauri/target/
+src-tauri/gen/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+*.DS_Store
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+vite.config.ts.timestamp-*
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*

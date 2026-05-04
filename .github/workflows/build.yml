@@ -1,0 +1,82 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-macos:
+    name: Build macOS (universal)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env
+        run: echo "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || 'https://vacaciones.smartcity.link' }}" > .env
+
+      - name: Build universal macOS app
+        run: npm run tauri build -- --target universal-apple-darwin
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+
+      - name: Find DMG
+        id: dmg
+        run: |
+          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
+          echo "path=$DMG" >> $GITHUB_OUTPUT
+          echo "name=$(basename $DMG)" >> $GITHUB_OUTPUT
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dmg.outputs.name }}
+          path: ${{ steps.dmg.outputs.path }}
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Link Fichajes ${{ github.ref_name }}
+          body: |
+            ## Link Fichajes ${{ github.ref_name }}
+
+            Widget macOS para fichar entrada/salida desde la barra de menú.
+
+            ### Instalación
+            1. Descarga el `.dmg`
+            2. Abre el archivo y arrastra **Link Fichajes** a Aplicaciones
+            3. Al abrirlo por primera vez: clic derecho → Abrir (Gatekeeper)
+            4. Haz clic en el icono de la barra de menú e inicia sesión
+
+            ### Requisitos
+            - macOS 13 Ventura o superior
+            - Cuenta `@smartcity.link`
+          files: ${{ steps.dmg.outputs.path }}
+          draft: false
+          prerelease: false
