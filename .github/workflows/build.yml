@@ -36,50 +36,86 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install dependencies
+      - name: Install JS dependencies
         run: npm ci
 
       - name: Create .env
         run: echo "VITE_API_BASE_URL=https://vacaciones.smartcity.link" > .env
 
-      - name: Build universal macOS app
-        run: npm run tauri build -- --target universal-apple-darwin
-        env:
-          APPLE_SIGNING_IDENTITY: '-'
-
-      - name: Find DMG
-        id: dmg
-        run: |
-          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
-          echo "path=$DMG" >> $GITHUB_OUTPUT
-          echo "name=$(basename $DMG)" >> $GITHUB_OUTPUT
-
-      - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.dmg.outputs.name }}
-          path: ${{ steps.dmg.outputs.path }}
-          retention-days: 30
-
-      - name: Create GitHub Release
+      # ── Build + Release en tags ────────────────────────────────────────────
+      - name: Build & publish release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Link Fichajes ${{ github.ref_name }}
-          body: |
+          tagName: ${{ github.ref_name }}
+          releaseName: Link Fichajes ${{ github.ref_name }}
+          releaseBody: |
             ## Link Fichajes ${{ github.ref_name }}
 
             Widget macOS para fichar entrada/salida desde la barra de menú.
 
             ### Instalación
-            1. Descarga el `.dmg`
-            2. Abre el archivo y arrastra **Link Fichajes** a Aplicaciones
-            3. Al abrirlo por primera vez: clic derecho → Abrir (Gatekeeper)
+            1. Descarga el `.dmg` y ábrelo
+            2. Arrastra **Link Fichajes** a la carpeta Aplicaciones
+            3. Primera vez: clic derecho → **Abrir** (necesario por Gatekeeper)
             4. Haz clic en el icono de la barra de menú e inicia sesión
 
             ### Requisitos
             - macOS 13 Ventura o superior
             - Cuenta `@smartcity.link`
-          files: ${{ steps.dmg.outputs.path }}
-          draft: false
+          args: --target universal-apple-darwin
+          releaseDraft: false
           prerelease: false
+
+      # Tras crear el release, renombrar el asset a LinkFichajes.dmg
+      # para que la URL de descarga de la web siempre funcione
+      - name: Rename release asset to LinkFichajes.dmg
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+
+          # Obtener el ID del asset subido (el .dmg universal)
+          ASSET_ID=$(curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/releases/tags/$TAG" \
+            | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for a in data.get('assets', []):
+            if a['name'].endswith('.dmg'):
+              print(a['id'])
+              break
+          ")
+
+          if [ -z "$ASSET_ID" ]; then
+            echo "No DMG asset found in release $TAG"
+            exit 1
+          fi
+
+          echo "Renaming asset $ASSET_ID to LinkFichajes.dmg"
+          curl -s -X PATCH \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/$REPO/releases/assets/$ASSET_ID" \
+            -d '{"name":"LinkFichajes.dmg"}' \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Renamed to:', d.get('name', 'error'))"
+
+      # ── Build sin release en push a main / PRs ────────────────────────────
+      - name: Build only (no release)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        run: npm run tauri build -- --target universal-apple-darwin
+
+      - name: Upload DMG artifact
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: LinkFichajes-${{ github.sha }}
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          retention-days: 7
