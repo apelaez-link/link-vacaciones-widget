@@ -1,0 +1,76 @@
+# Bitbucket Pipelines — Link Fichajes Widget (macOS)
+#
+# NOTA: macOS runners no están disponibles en Bitbucket Cloud por defecto.
+# Se usa un self-hosted runner de macOS (Mac Mini con Bitbucket Runner).
+# Si no hay runner disponible, usar el workflow de GitHub Actions (.github/workflows/build.yml).
+#
+# Variables de entorno a configurar en Bitbucket Repository Settings → Variables:
+#   VITE_API_BASE_URL  → https://vacaciones.smartcity.link
+
+definitions:
+  caches:
+    npm: ~/.npm
+    cargo: ~/.cargo
+    rust-target: src-tauri/target
+
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: Typecheck
+          runs-on:
+            - self.hosted
+            - macos
+          script:
+            - node --version
+            - npm ci
+            - npx tsc --noEmit
+
+  branches:
+    main:
+      - step:
+          name: Build & Release (universal macOS DMG)
+          runs-on:
+            - self.hosted
+            - macos
+          caches:
+            - npm
+            - cargo
+            - rust-target
+          artifacts:
+            - src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          script:
+            - node --version
+            - rustup target add aarch64-apple-darwin x86_64-apple-darwin
+            - npm ci
+            - echo "VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://vacaciones.smartcity.link}" > .env
+            - npm run tauri build -- --target universal-apple-darwin
+            - |
+              DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
+              echo "DMG built: $DMG"
+              ls -lh "$DMG"
+
+  tags:
+    'v*':
+      - step:
+          name: Release DMG for tag
+          runs-on:
+            - self.hosted
+            - macos
+          caches:
+            - npm
+            - cargo
+            - rust-target
+          script:
+            - npm ci
+            - echo "VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://vacaciones.smartcity.link}" > .env
+            - npm run tauri build -- --target universal-apple-darwin
+            - |
+              VERSION="${BITBUCKET_TAG}"
+              DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
+              DEST="LinkFichajes-${VERSION}.dmg"
+              cp "$DMG" "$DEST"
+              echo "Release artifact: $DEST"
+              ls -lh "$DEST"
+          artifacts:
+            - 'LinkFichajes-*.dmg'
