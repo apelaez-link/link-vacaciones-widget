@@ -108,4 +108,12 @@
   }
   .feedback-fab:hover { background: #0065d4; transform: scale(1.08); }
   .feedback-fab:active { transform: scale(0.96); }
+
+  /* Mobile: allow content to grow beyond fixed height */
+  @media (min-height: 600px) {
+    .popover { height: auto; min-height: 100dvh; }
+    .footer { padding: 12px; }
+    .footer-link { font-size: 14px; padding: 8px 6px; }
+    .feedback-fab { width: 40px; height: 40px; font-size: 18px; }
+  }
 </style>

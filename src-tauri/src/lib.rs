@@ -1,25 +1,25 @@
 mod auth;
 mod commands;
+#[cfg(desktop)]
 mod tray;
 
+use tauri::{Emitter, Manager, RunEvent};
+use tauri_plugin_deep_link::DeepLinkExt;
+
+#[cfg(desktop)]
 use tauri::{
     tray::{TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager, RunEvent, WindowEvent,
+    WindowEvent,
 };
-use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_http::init())
-        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_autostart::init(
-            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            Some(vec![]),
-        ))
         .invoke_handler(tauri::generate_handler![
             commands::load_token,
             commands::delete_token,
@@ -27,11 +27,22 @@ pub fn run() {
             commands::set_tray_state,
             commands::get_settings,
             commands::save_settings,
-        ])
-        .setup(|app| {
-            let handle = app.handle().clone();
+        ]);
 
-            // Register URL scheme at runtime. May fail in dev mode (no bundle); that's fine.
+    // Desktop-only plugins
+    #[cfg(not(mobile))]
+    {
+        builder = builder
+            .plugin(tauri_plugin_shell::init())
+            .plugin(tauri_plugin_autostart::init(
+                tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+                Some(vec![]),
+            ));
+    }
+
+    builder
+        .setup(|app| {
+            // Register URL scheme at runtime (macOS dev mode)
             #[cfg(target_os = "macos")]
             if let Err(e) = app.deep_link().register("linkfichajes") {
                 eprintln!("[widget] deep_link register: {e}");
@@ -45,61 +56,72 @@ pub fn run() {
                 }
             });
 
-            // Build the tray icon (single instance — no trayIcon in tauri.conf.json)
-            TrayIconBuilder::with_id("main")
-                .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("Link Fichajes")
-                .on_tray_icon_event(move |_tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: tauri::tray::MouseButton::Left,
-                        button_state: tauri::tray::MouseButtonState::Up,
-                        rect,
-                        ..
-                    } = event
-                    {
-                        let app = &handle;
-                        if let Some(window) = app.get_webview_window("popover") {
-                            if window.is_visible().unwrap_or(false) {
-                                let _ = window.hide();
-                            } else {
-                                let win_width = 320.0_f64;
-                                let (ix, iy, iw, ih) = rect_to_f64(&rect);
-                                let x = ix + iw / 2.0 - win_width / 2.0;
-                                let y = iy + ih + 4.0;
-                                let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                                let _ = window.emit("widget-focused", ());
+            // ── Desktop only: tray icon + sleep listener ──
+            #[cfg(desktop)]
+            {
+                let handle = app.handle().clone();
+
+                TrayIconBuilder::with_id("main")
+                    .icon(app.default_window_icon().unwrap().clone())
+                    .tooltip("Link Fichajes")
+                    .on_tray_icon_event(move |_tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: tauri::tray::MouseButton::Left,
+                            button_state: tauri::tray::MouseButtonState::Up,
+                            rect,
+                            ..
+                        } = event
+                        {
+                            let app = &handle;
+                            if let Some(window) = app.get_webview_window("popover") {
+                                if window.is_visible().unwrap_or(false) {
+                                    let _ = window.hide();
+                                } else {
+                                    let win_width = 320.0_f64;
+                                    let (ix, iy, iw, ih) = rect_to_f64(&rect);
+                                    let x = ix + iw / 2.0 - win_width / 2.0;
+                                    let y = iy + ih + 4.0;
+                                    let _ = window
+                                        .set_position(tauri::PhysicalPosition::new(x, y));
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                    let _ = window.emit("widget-focused", ());
+                                }
                             }
                         }
-                    }
-                })
-                .build(app)?;
+                    })
+                    .build(app)?;
 
-            register_sleep_listener(app.handle().clone());
+                register_sleep_listener(app.handle().clone());
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| {
+            // Auto-hide popover on focus loss (macOS only)
+            #[cfg(desktop)]
             if let WindowEvent::Focused(false) = event {
                 if window.label() == "popover" {
                     let _ = window.hide();
                 }
             }
+            let _ = (window, event);
         })
         .build(tauri::generate_context!())
         .expect("error building tauri application")
         .run(|_app, event| {
             // RunEvent::Opened is a fallback for when the app is launched via URL scheme
-            // (tauri-plugin-deep-link handles the runtime case above)
             #[cfg(any(target_os = "macos", target_os = "ios"))]
-            if let RunEvent::Opened { urls } = event {
+            if let RunEvent::Opened { ref urls } = event {
                 for url in urls {
                     handle_deep_link(_app, url.as_str());
                 }
             }
+            let _ = (_app, &event);
         });
 }
 
+#[cfg(desktop)]
 fn rect_to_f64(rect: &tauri::Rect) -> (f64, f64, f64, f64) {
     let (x, y) = match rect.position {
         tauri::Position::Physical(ref p) => (p.x as f64, p.y as f64),
@@ -127,6 +149,8 @@ fn handle_deep_link(app: &tauri::AppHandle, url: &str) {
                         return;
                     }
                     let _ = app.emit("auth:token-received", decoded);
+                    // On desktop: bring window to front
+                    #[cfg(desktop)]
                     if let Some(window) = app.get_webview_window("popover") {
                         let _ = window.show();
                         let _ = window.set_focus();
@@ -164,6 +188,7 @@ fn percent_decode(s: &str) -> String {
     result
 }
 
+#[cfg(desktop)]
 fn register_sleep_listener(app: tauri::AppHandle) {
     std::thread::spawn(move || {
         let mut last = std::time::Instant::now();

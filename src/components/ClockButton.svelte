@@ -36,4 +36,10 @@
   .btn-in:hover:not(:disabled) { background: #2db34a; }
   .btn-out { background: #ff3b30; color: white; }
   .btn-out:hover:not(:disabled) { background: #e0352b; }
+
+  /* Mobile: bigger button */
+  @media (min-height: 600px) {
+    .action { padding: 16px; }
+    .btn { padding: 16px 0; font-size: 16px; border-radius: 12px; }
+  }
 </style>

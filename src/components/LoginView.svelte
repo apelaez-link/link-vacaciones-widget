@@ -25,7 +25,8 @@
 <div class="login">
   <div class="logo">⏱</div>
   <h2>Link Fichajes</h2>
-  <p>Registra tu jornada desde la barra de menú</p>
+  <p class="subtitle-desktop">Registra tu jornada desde la barra de menú</p>
+  <p class="subtitle-mobile">Registra tu jornada de trabajo</p>
   <button onclick={handleLogin} disabled={loading}>
     {#if loading}Abriendo navegador…{:else}Iniciar sesión con Google{/if}
   </button>
@@ -62,6 +63,17 @@
   .logo { font-size: 40px; }
   h2 { font-size: 16px; font-weight: 600; color: #1c1c1e; margin: 0; }
   p { font-size: 12px; color: #888; margin: 0; }
+  /* Show correct subtitle per platform */
+  .subtitle-mobile { display: none; }
+  @media (min-height: 600px) {
+    .subtitle-desktop { display: none; }
+    .subtitle-mobile { display: block; }
+    .login { gap: 16px; padding: 48px 32px; }
+    .logo { font-size: 64px; }
+    h2 { font-size: 24px; }
+    p { font-size: 15px; }
+    .hint { font-size: 13px; }
+  }
   button {
     margin-top: 12px;
     padding: 9px 20px;
@@ -76,6 +88,9 @@
     width: 100%;
   }
   button:disabled { opacity: 0.6; cursor: default; }
+  @media (min-height: 600px) {
+    button { padding: 16px 20px; font-size: 17px; border-radius: 14px; margin-top: 8px; }
+  }
   .hint { font-size: 11px; color: #aaa; }
   .dev-section {
     margin-top: 16px;

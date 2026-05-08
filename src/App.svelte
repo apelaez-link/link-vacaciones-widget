@@ -214,4 +214,32 @@
       0 12px 24px rgba(0, 0, 0, 0.12),
       0 24px 48px rgba(0, 0, 0, 0.08);
   }
+
+  /* ── Mobile (iOS / Android) ── */
+  /* macOS window is fixed 320×~480px; mobile is full-screen (min-height > 600px) */
+  @media (min-height: 600px) {
+    :global(html), :global(body) {
+      background: #ffffff;
+      height: 100%;
+    }
+    :global(body) {
+      padding: 0;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      overflow-y: auto;
+    }
+    .app {
+      border-radius: 0;
+      box-shadow: none;
+      min-height: 100dvh;
+      overflow: visible;
+    }
+  }
+
+  /* ── Touch target enlargement on mobile ── */
+  @media (pointer: coarse) {
+    :global(button), :global(a) {
+      min-height: 44px;
+    }
+  }
 </style>

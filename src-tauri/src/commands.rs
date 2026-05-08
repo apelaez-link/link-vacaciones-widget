@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 
-use crate::{auth, tray};
+use crate::auth;
+#[cfg(desktop)]
+use crate::tray;
 
 // ── Token management ──────────────────────────────────────────────────────
 
@@ -21,11 +23,18 @@ pub fn save_token(token: String) -> Result<(), String> {
     auth::save_token(&token)
 }
 
-// ── Tray icon control ─────────────────────────────────────────────────────
+// ── Tray icon control (no-op on mobile) ───────────────────────────────────
 
 #[tauri::command]
-pub fn set_tray_state(app: AppHandle, state: String, label: Option<String>) -> Result<(), String> {
-    tray::update_icon(&app, &state, label.as_deref())
+pub fn set_tray_state(
+    #[allow(unused_variables)] app: AppHandle,
+    #[allow(unused_variables)] state: String,
+    #[allow(unused_variables)] label: Option<String>,
+) -> Result<(), String> {
+    #[cfg(desktop)]
+    return tray::update_icon(&app, &state, label.as_deref());
+    #[cfg(not(desktop))]
+    Ok(())
 }
 
 // ── Settings persistence (via tauri-plugin-store) ─────────────────────────
