@@ -29,15 +29,16 @@ pub fn run() {
             commands::save_settings,
         ]);
 
+    // shell plugin (needed on all platforms for open() — opens URLs in system browser)
+    builder = builder.plugin(tauri_plugin_shell::init());
+
     // Desktop-only plugins
     #[cfg(not(mobile))]
     {
-        builder = builder
-            .plugin(tauri_plugin_shell::init())
-            .plugin(tauri_plugin_autostart::init(
-                tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-                Some(vec![]),
-            ));
+        builder = builder.plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![]),
+        ));
     }
 
     builder
