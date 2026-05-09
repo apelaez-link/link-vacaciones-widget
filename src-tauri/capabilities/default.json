@@ -15,6 +15,13 @@
     },
     "shell:allow-open",
     "opener:allow-open-url",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://**" },
+        { "url": "http://**" }
+      ]
+    },
     "notification:default",
     "notification:allow-request-permission",
     "notification:allow-is-permission-granted",

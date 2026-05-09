@@ -42,4 +42,47 @@
     .action { padding: 16px; }
     .btn { padding: 16px 0; font-size: 16px; border-radius: 12px; }
   }
+
+  /* ── iOS 26: SF Pro, stadium CTA, generous padding ── */
+  :global([data-platform="ios"]) .action { padding: 16px 20px; border-bottom: 1px solid rgba(60,60,67,0.18); }
+  :global([data-platform="ios"]) .btn {
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 18px 0;
+    letter-spacing: -0.01em;
+  }
+  :global([data-platform="ios"]) .btn-in  { background: #34C759; box-shadow: 0 2px 8px rgba(52,199,89,0.35); }
+  :global([data-platform="ios"]) .btn-out { background: #FF3B30; box-shadow: 0 2px 8px rgba(255,59,48,0.35); }
+  :global([data-platform="ios"]) .btn-in:hover:not(:disabled)  { background: #2DB34A; }
+  :global([data-platform="ios"]) .btn-out:hover:not(:disabled) { background: #E0352B; }
+
+  /* ── Android Material You: pill button, letter-spacing ── */
+  :global([data-platform="android"]) .action { padding: 16px; background: #ECF0FF; border-bottom: none; }
+  :global([data-platform="android"]) .btn {
+    border-radius: 100px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.20), 0 1px 2px rgba(0,0,0,0.12);
+    transition: background 0.12s, box-shadow 0.12s, transform 0.08s;
+  }
+  :global([data-platform="android"]) .btn:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  :global([data-platform="android"]) .btn-in  { background: #1E6E35; }
+  :global([data-platform="android"]) .btn-out { background: #B71C1C; }
+  :global([data-platform="android"]) .btn-in:hover:not(:disabled)  { background: #155228; }
+  :global([data-platform="android"]) .btn-out:hover:not(:disabled) { background: #8E1515; }
+
+  /* ── macOS: tighter, more precise ── */
+  :global([data-platform="macos"]) .action { padding: 10px 14px; }
+  :global([data-platform="macos"]) .btn {
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 0;
+  }
 </style>

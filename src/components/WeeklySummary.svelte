@@ -53,4 +53,42 @@
   }
   .over { color: #ff3b30; }
   .warn { color: #ff9500; }
+
+  /* ── iOS 26: card-style section, larger type ── */
+  :global([data-platform="ios"]) .weekly {
+    margin: 12px 20px 0;
+    padding: 14px 16px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  :global([data-platform="ios"]) .weekly-label { font-size: 13px; color: #8E8E93; }
+  :global([data-platform="ios"]) .weekly-value { font-size: 15px; }
+  :global([data-platform="ios"]) .bar-bg { height: 5px; border-radius: 3px; }
+  :global([data-platform="ios"]) .bar-fill { border-radius: 3px; }
+  :global([data-platform="ios"]) .weekly-sub { font-size: 12px; }
+  :global([data-platform="ios"]) .over { color: #FF3B30; }
+  :global([data-platform="ios"]) .warn { color: #FF9F0A; }
+
+  /* ── Android Material You: tonal card ── */
+  :global([data-platform="android"]) .weekly {
+    margin: 12px 16px 0;
+    padding: 16px;
+    background: #FFFFFF;
+    border-radius: 20px;
+    border-bottom: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    font-family: Roboto, system-ui, sans-serif;
+  }
+  :global([data-platform="android"]) .weekly-label { font-size: 13px; color: #49454F; }
+  :global([data-platform="android"]) .weekly-value { font-size: 15px; }
+  :global([data-platform="android"]) .bar-bg { height: 6px; border-radius: 3px; background: rgba(0,0,0,0.10); }
+  :global([data-platform="android"]) .bar-fill { border-radius: 3px; }
+  :global([data-platform="android"]) .weekly-sub { font-size: 12px; }
+
+  /* ── macOS: compact ── */
+  :global([data-platform="macos"]) .weekly { padding: 7px 14px 9px; }
+  :global([data-platform="macos"]) .weekly-label { font-size: 10px; }
+  :global([data-platform="macos"]) .weekly-value { font-size: 11px; }
 </style>

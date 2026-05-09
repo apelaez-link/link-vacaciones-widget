@@ -66,4 +66,52 @@
   .icon-btn:disabled { opacity: 0.4; cursor: default; }
   .spinning { animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── iOS 26: frosted glass header, larger avatar, SF Pro Display name ── */
+  :global([data-platform="ios"]) .header {
+    padding: 18px 20px 14px;
+    background: rgba(255,255,255,0.82);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-bottom: 0.5px solid rgba(60,60,67,0.29);
+  }
+  :global([data-platform="ios"]) .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    font-size: 15px; font-weight: 700;
+    background: #D1E8FF; color: #0051A8;
+  }
+  :global([data-platform="ios"]) .name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  :global([data-platform="ios"]) .icon-btn {
+    font-size: 18px; padding: 6px 8px; border-radius: 8px;
+    color: #007AFF;
+  }
+  :global([data-platform="ios"]) .icon-btn:hover:not(:disabled) { background: rgba(0,122,255,0.10); color: #005EC4; }
+
+  /* ── Android Material You: card-style header, tonal avatar ── */
+  :global([data-platform="android"]) .header {
+    padding: 16px 16px 12px;
+    background: #FFFFFF;
+    border-bottom: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  :global([data-platform="android"]) .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    font-size: 15px; font-weight: 600;
+    background: #D3E2FF; color: #1A3A7A;
+  }
+  :global([data-platform="android"]) .name {
+    font-size: 16px; font-weight: 500;
+    font-family: 'Google Sans', Roboto, system-ui, sans-serif;
+  }
+  :global([data-platform="android"]) .icon-btn {
+    font-size: 17px; padding: 6px 8px; border-radius: 50%;
+    color: #4085F7;
+  }
+  :global([data-platform="android"]) .icon-btn:hover:not(:disabled) { background: rgba(64,133,247,0.12); }
+
+  /* ── macOS: compact toolbar style ── */
+  :global([data-platform="macos"]) .header { padding: 10px 14px 9px; }
+  :global([data-platform="macos"]) .avatar { width: 28px; height: 28px; font-size: 11px; }
+  :global([data-platform="macos"]) .name { font-size: 12px; }
+  :global([data-platform="macos"]) .icon-btn { font-size: 13px; padding: 3px 5px; border-radius: 5px; }
 </style>

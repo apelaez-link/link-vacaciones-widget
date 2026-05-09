@@ -66,4 +66,39 @@
   .dot-gray { background: #aeaeb2; }
   .time-since { font-size: 11px; color: #888; }
   .time-since.late { color: #b22222; }
+
+  /* ── iOS 26: SF-style pill badges, larger text, more padding ── */
+  :global([data-platform="ios"]) .status-section { padding: 14px 20px 0; }
+  :global([data-platform="ios"]) .badge {
+    font-size: 14px; font-weight: 500;
+    padding: 6px 14px; border-radius: 100px;
+    gap: 7px;
+  }
+  :global([data-platform="ios"]) .dot { width: 8px; height: 8px; }
+  :global([data-platform="ios"]) .time-since { font-size: 13px; color: #8E8E93; }
+  :global([data-platform="ios"]) .time-since.late { color: #FF3B30; }
+
+  /* ── Android Material You: tonal chip style ── */
+  :global([data-platform="android"]) .status-section {
+    padding: 14px 16px 0;
+    background: #ECF0FF;
+  }
+  :global([data-platform="android"]) .badge {
+    font-size: 14px; font-weight: 500;
+    padding: 8px 16px; border-radius: 100px;
+    gap: 8px;
+    font-family: 'Google Sans', Roboto, system-ui, sans-serif;
+  }
+  :global([data-platform="android"]) .badge-in { background: #C8E6C9; color: #1B5E20; }
+  :global([data-platform="android"]) .badge-out { background: #FFCDD2; color: #B71C1C; }
+  :global([data-platform="android"]) .badge-closed { background: #E8EAF6; color: #3949AB; }
+  :global([data-platform="android"]) .dot-green { background: #2E7D32; }
+  :global([data-platform="android"]) .dot-red   { background: #C62828; }
+  :global([data-platform="android"]) .dot-gray  { background: #5C6BC0; }
+  :global([data-platform="android"]) .time-since { font-size: 13px; }
+
+  /* ── macOS: compact, minimal ── */
+  :global([data-platform="macos"]) .status-section { padding: 8px 14px 0; }
+  :global([data-platform="macos"]) .badge { font-size: 11px; padding: 3px 8px; }
+  :global([data-platform="macos"]) .time-since { font-size: 10px; }
 </style>

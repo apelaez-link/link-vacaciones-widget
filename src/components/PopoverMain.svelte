@@ -117,4 +117,55 @@
     .footer-link { font-size: 14px; padding: 8px 6px; }
     .feedback-fab { width: 40px; height: 40px; font-size: 18px; }
   }
+
+  /* ── iOS 26: grouped background sections, frosted footer ── */
+  :global([data-platform="ios"]) .popover { background: #F2F2F7; }
+  :global([data-platform="ios"]) .footer {
+    background: rgba(255,255,255,0.82);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-top: 0.5px solid rgba(60,60,67,0.29);
+    padding: 14px 20px;
+  }
+  :global([data-platform="ios"]) .footer-link {
+    font-size: 15px; color: #007AFF; font-weight: 500;
+    padding: 10px 8px;
+  }
+  :global([data-platform="ios"]) .feedback-fab {
+    background: #007AFF; width: 42px; height: 42px;
+    box-shadow: 0 4px 12px rgba(0,122,255,0.45);
+    font-size: 19px;
+  }
+
+  /* ── Android Material You: surface container footer, FAB ── */
+  :global([data-platform="android"]) .popover { background: #ECF0FF; }
+  :global([data-platform="android"]) .footer {
+    background: #FFFFFF;
+    border-top: none;
+    box-shadow: 0 -1px 4px rgba(0,0,0,0.08);
+    padding: 14px 16px;
+    border-radius: 0;
+    font-family: 'Google Sans', Roboto, system-ui, sans-serif;
+  }
+  :global([data-platform="android"]) .footer-link {
+    font-size: 14px; color: #4085F7; font-weight: 500;
+    padding: 10px 8px; letter-spacing: 0.01em;
+  }
+  :global([data-platform="android"]) .feedback-fab {
+    background: #4085F7; width: 44px; height: 44px;
+    border-radius: 14px; /* M3 FAB medium shape */
+    box-shadow: 0 3px 8px rgba(64,133,247,0.40), 0 1px 3px rgba(0,0,0,0.15);
+    font-size: 20px;
+  }
+  :global([data-platform="android"]) .error {
+    margin: 8px 16px; border-radius: 12px; font-size: 13px;
+    font-family: Roboto, system-ui, sans-serif;
+  }
+
+  /* ── macOS: tight footer ── */
+  :global([data-platform="macos"]) .footer { padding: 5px 10px; }
+  :global([data-platform="macos"]) .footer-link { font-size: 11px; color: #0071E3; }
+  :global([data-platform="macos"]) .feedback-fab {
+    width: 24px; height: 24px; font-size: 12px; background: #0071E3;
+  }
 </style>

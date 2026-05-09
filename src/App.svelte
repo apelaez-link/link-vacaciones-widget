@@ -27,7 +27,16 @@
   let unlistenFocus: (() => void) | null = null;
   let resizeObserver: ResizeObserver | null = null;
 
+  // ── Platform detection ───────────────────────────────────────────────
+  function detectPlatform(): 'macos' | 'ios' | 'android' {
+    const ua = navigator.userAgent;
+    if (/Android/i.test(ua)) return 'android';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+    return 'macos';
+  }
+
   onMount(async () => {
+    document.documentElement.dataset.platform = detectPlatform();
     // Pedir permiso de notificaciones al arrancar (solo la primera vez)
     const granted = await isPermissionGranted();
     if (!granted) await requestPermission();
@@ -241,5 +250,68 @@
     :global(button), :global(a) {
       min-height: 44px;
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     PLATFORM TOKENS — set as CSS custom properties on <html>
+     Each platform overrides these; components reference var(--pt-*)
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* macOS: compact, precise, system material */
+  :global([data-platform="macos"]) {
+    --pt-accent:        #0071E3;
+    --pt-accent-hover:  #005BB5;
+    --pt-radius-btn:    7px;
+    --pt-radius-card:   10px;
+    --pt-font-btn:      13px;
+    --pt-weight-btn:    500;
+    --pt-pad-section:   10px 16px;
+    --pt-bg-body:       transparent;
+    --pt-bg-header:     rgba(246, 246, 246, 0.96);
+    --pt-shadow-card:   0 1px 3px rgba(0,0,0,0.12);
+    --pt-divider:       rgba(0,0,0,0.10);
+  }
+
+  /* iOS 26: spacious, frosted, SF Pro, stadium CTAs */
+  :global([data-platform="ios"]) {
+    --pt-accent:        #007AFF;
+    --pt-accent-hover:  #005EC4;
+    --pt-radius-btn:    14px;
+    --pt-radius-card:   16px;
+    --pt-font-btn:      17px;
+    --pt-weight-btn:    600;
+    --pt-pad-section:   16px 20px;
+    --pt-bg-body:       #F2F2F7;
+    --pt-bg-header:     rgba(255,255,255,0.82);
+    --pt-shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+    --pt-divider:       rgba(60,60,67,0.18);
+  }
+  :global([data-platform="ios"] body) {
+    background: #F2F2F7;
+  }
+  :global([data-platform="ios"] .app) {
+    background: #F2F2F7;
+  }
+
+  /* Android Material You: Roboto, pill CTAs, tonal surfaces */
+  :global([data-platform="android"]) {
+    --pt-accent:        #4085F7;
+    --pt-accent-hover:  #2D6FE8;
+    --pt-radius-btn:    100px;
+    --pt-radius-card:   20px;
+    --pt-font-btn:      16px;
+    --pt-weight-btn:    500;
+    --pt-pad-section:   14px 16px;
+    --pt-bg-body:       #ECF0FF;
+    --pt-bg-header:     #FFFFFF;
+    --pt-shadow-card:   0 2px 6px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+    --pt-divider:       rgba(0,0,0,0.08);
+  }
+  :global([data-platform="android"] body) {
+    background: #ECF0FF;
+    font-family: 'Google Sans', Roboto, system-ui, sans-serif;
+  }
+  :global([data-platform="android"] .app) {
+    background: #ECF0FF;
   }
 </style>
