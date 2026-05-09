@@ -119,7 +119,9 @@
   }
 
   /* ── iOS 26: grouped background sections, frosted footer ── */
-  :global([data-platform="ios"]) .popover { background: #F2F2F7; }
+  /* .popover is scoped: :global([data-platform="ios"]) .popover compiles to
+     [data-platform="ios"] .popover.svelte-xxxx — higher specificity, wins */
+  :global([data-platform="ios"]) .popover { background: #F2F2F7 !important; }
   :global([data-platform="ios"]) .footer {
     background: rgba(255,255,255,0.82);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -138,7 +140,7 @@
   }
 
   /* ── Android Material You: surface container footer, FAB ── */
-  :global([data-platform="android"]) .popover { background: #ECF0FF; }
+  :global([data-platform="android"]) .popover { background: #ECF0FF !important; }
   :global([data-platform="android"]) .footer {
     background: #FFFFFF;
     border-top: none;

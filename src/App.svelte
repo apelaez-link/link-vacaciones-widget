@@ -287,10 +287,11 @@
     --pt-divider:       rgba(60,60,67,0.18);
   }
   :global([data-platform="ios"] body) {
-    background: #F2F2F7;
+    background: #F2F2F7 !important;
   }
-  :global([data-platform="ios"] .app) {
-    background: #F2F2F7;
+  /* .app is scoped — use selector outside :global() so Svelte adds the hash */
+  :global([data-platform="ios"]) .app {
+    background: #F2F2F7 !important;
   }
 
   /* Android Material You: Roboto, pill CTAs, tonal surfaces */
@@ -308,10 +309,10 @@
     --pt-divider:       rgba(0,0,0,0.08);
   }
   :global([data-platform="android"] body) {
-    background: #ECF0FF;
+    background: #ECF0FF !important;
     font-family: 'Google Sans', Roboto, system-ui, sans-serif;
   }
-  :global([data-platform="android"] .app) {
-    background: #ECF0FF;
+  :global([data-platform="android"]) .app {
+    background: #ECF0FF !important;
   }
 </style>
