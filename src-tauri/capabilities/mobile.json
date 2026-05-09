@@ -3,7 +3,7 @@
   "identifier": "mobile",
   "description": "Capability for iOS and Android",
   "platforms": ["iOS", "android"],
-  "windows": ["main"],
+  "windows": ["popover"],
   "permissions": [
     "core:default",
     "opener:allow-open-url",

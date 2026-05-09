@@ -9,8 +9,13 @@
 
   async function handleLogin() {
     loading = true;
-    await startLogin();
-    loading = false;
+    try {
+      await startLogin();
+    } catch (e) {
+      console.error('[login] openUrl failed:', e);
+    } finally {
+      loading = false;
+    }
   }
 
   async function handleDevToken() {
