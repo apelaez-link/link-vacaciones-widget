@@ -1,6 +1,7 @@
 <script lang="ts">
   import { todayCheckin } from '../stores/checkin';
-  import { LOCATION_ICONS } from '../lib/types';
+  import { LOCATION_ICON_NAMES } from '../lib/types';
+  import Icon from './Icon.svelte';
 
   function fmt(iso: string) {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -32,7 +33,7 @@
     <div class="log-row">
       <div class="log-type">
         <span class="dot dot-green"></span>
-        {LOCATION_ICONS[$todayCheckin.location as keyof typeof LOCATION_ICONS] ?? ''} Entrada
+        <Icon name={LOCATION_ICON_NAMES[$todayCheckin.location as keyof typeof LOCATION_ICON_NAMES] ?? 'home'} size={14} /> Entrada
       </div>
       <div class="log-time">{fmt($todayCheckin.checked_in_at)}</div>
     </div>

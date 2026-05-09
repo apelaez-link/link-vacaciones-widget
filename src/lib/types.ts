@@ -34,9 +34,10 @@ export const LOCATION_LABELS: Record<Location, string> = {
   TRAVEL: 'Viaje',
 };
 
-export const LOCATION_ICONS: Record<Location, string> = {
-  REMOTE: '🏠',
-  OFFICE: '🏢',
-  CLIENT: '🤝',
-  TRAVEL: '✈️',
+// Maps each location to the Icon component name (no emojis)
+export const LOCATION_ICON_NAMES: Record<Location, string> = {
+  REMOTE: 'home',
+  OFFICE: 'office',
+  CLIENT: 'people',
+  TRAVEL: 'flight',
 };

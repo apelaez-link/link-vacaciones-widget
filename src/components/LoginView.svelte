@@ -1,5 +1,6 @@
 <script lang="ts">
   import { startLogin, saveToken } from '../lib/auth';
+  import Icon from './Icon.svelte';
 
   const { onTokenSaved }: { onTokenSaved?: () => void } = $props();
 
@@ -30,7 +31,7 @@
 </script>
 
 <div class="login">
-  <div class="logo">⏱</div>
+  <div class="logo"><Icon name="clock" size={48} /></div>
   <h2>Link Fichajes</h2>
   <p class="subtitle-desktop">Registra tu jornada desde la barra de menú</p>
   <p class="subtitle-mobile">Registra tu jornada de trabajo</p>
@@ -68,7 +69,7 @@
     text-align: center;
     height: 100%;
   }
-  .logo { font-size: 40px; }
+  .logo { color: #007aff; display: flex; align-items: center; justify-content: center; }
   h2 { font-size: 16px; font-weight: 600; color: #1c1c1e; margin: 0; }
   p { font-size: 12px; color: #888; margin: 0; }
   /* Show correct subtitle per platform */
@@ -77,7 +78,7 @@
     .subtitle-desktop { display: none; }
     .subtitle-mobile { display: block; }
     .login { gap: 16px; padding: 48px 32px; }
-    .logo { font-size: 64px; }
+    /* logo size is fixed at 48px via prop; scaling via CSS if needed */
     h2 { font-size: 24px; }
     p { font-size: 15px; }
     .hint { font-size: 13px; }

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Location } from '../lib/types';
-  import { LOCATION_LABELS, LOCATION_ICONS } from '../lib/types';
+  import { LOCATION_LABELS, LOCATION_ICON_NAMES } from '../lib/types';
+  import Icon from './Icon.svelte';
 
   const LOCATIONS: Location[] = ['REMOTE', 'OFFICE', 'CLIENT', 'TRAVEL'];
 
@@ -14,7 +15,7 @@
       onclick={() => onSelect(loc)}
       title={LOCATION_LABELS[loc]}
     >
-      <span class="icon">{LOCATION_ICONS[loc]}</span>
+      <span class="icon"><Icon name={LOCATION_ICON_NAMES[loc]} size={18} /></span>
       <span class="label">{LOCATION_LABELS[loc]}</span>
     </button>
   {/each}

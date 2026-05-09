@@ -4,6 +4,7 @@
   import { sessionToken } from '../stores/auth';
 
   import { isLoading } from '../stores/checkin';
+  import Icon from './Icon.svelte';
 
   const { onSettings, onSignOut, onRefresh }: {
     onSettings: () => void;
@@ -38,9 +39,9 @@
       <div class="name">{$userName ?? 'Usuario'}</div>
     </div>
     <div class="actions">
-      <button class="icon-btn {refreshing ? 'spinning' : ''}" title="Actualizar" onclick={handleRefresh} disabled={refreshing || $isLoading}>↻</button>
-      <button class="icon-btn" title="Ajustes" onclick={onSettings}>⚙</button>
-      <button class="icon-btn" title="Cerrar sesión" onclick={handleSignOut}>↩</button>
+      <button class="icon-btn {refreshing ? 'spinning' : ''}" title="Actualizar" onclick={handleRefresh} disabled={refreshing || $isLoading}><Icon name="refresh" size={16} /></button>
+      <button class="icon-btn" title="Ajustes" onclick={onSettings}><Icon name="settings" size={16} /></button>
+      <button class="icon-btn" title="Cerrar sesión" onclick={handleSignOut}><Icon name="logout" size={16} /></button>
     </div>
   </div>
 </div>

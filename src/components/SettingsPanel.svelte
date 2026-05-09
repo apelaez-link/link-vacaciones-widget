@@ -4,6 +4,7 @@
   import { saveUserSettings } from '../lib/api';
   import { enable as enableAutostart, disable as disableAutostart, isEnabled as isAutostartEnabled } from '@tauri-apps/plugin-autostart';
   import { onMount } from 'svelte';
+  import Icon from './Icon.svelte';
 
   const { onBack }: { onBack: () => void } = $props();
 
@@ -57,7 +58,7 @@
 
 <div class="panel">
   <div class="header">
-    <button class="back-btn" onclick={onBack}>←</button>
+    <button class="back-btn" onclick={onBack}><Icon name="arrow-back" size={16} /></button>
     <span>Ajustes de fichajes</span>
   </div>
 
@@ -152,7 +153,7 @@
 
   <div class="footer">
     <button class="save-btn" onclick={handleSave} disabled={saving}>
-      {#if saving}Guardando…{:else if saved}✓ Guardado{:else}Guardar cambios{/if}
+      {#if saving}Guardando…{:else if saved}Guardado{:else}Guardar cambios{/if}
     </button>
   </div>
 </div>

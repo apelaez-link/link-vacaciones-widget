@@ -1,6 +1,7 @@
 <script lang="ts">
   import { todayCheckin, isLoading } from '../stores/checkin';
   import type { Location } from '../lib/types';
+  import Icon from './Icon.svelte';
 
   const { location, onClockIn, onClockOut }: {
     location: Location;
@@ -14,11 +15,11 @@
 <div class="action">
   {#if isClockedIn}
     <button class="btn btn-out" onclick={onClockOut} disabled={$isLoading}>
-      ⏹ Registrar salida
+      <Icon name="stop" size={16} /> Registrar salida
     </button>
   {:else}
     <button class="btn btn-in" onclick={onClockIn} disabled={$isLoading}>
-      ▶ Registrar entrada
+      <Icon name="play" size={16} /> Registrar entrada
     </button>
   {/if}
 </div>

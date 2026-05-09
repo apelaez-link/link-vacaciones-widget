@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fetch } from '@tauri-apps/plugin-http';
   import { loadToken } from '../lib/auth';
+  import Icon from './Icon.svelte';
 
   const BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://vacaciones.smartcity.link';
   const { onClose }: { onClose: () => void } = $props();
@@ -49,12 +50,12 @@
   <div class="modal" onclick={(e) => e.stopPropagation()}>
     <div class="modal-header">
       <span>Enviar feedback</span>
-      <button class="close-btn" onclick={onClose}>✕</button>
+      <button class="close-btn" onclick={onClose}><Icon name="close" size={16} /></button>
     </div>
 
     <div class="type-row">
-      <button class="type-btn {type === 'BUG' ? 'active-bug' : ''}" onclick={() => type = 'BUG'}>🐛 Bug</button>
-      <button class="type-btn {type === 'SUGGESTION' ? 'active-sug' : ''}" onclick={() => type = 'SUGGESTION'}>💡 Sugerencia</button>
+      <button class="type-btn {type === 'BUG' ? 'active-bug' : ''}" onclick={() => type = 'BUG'}><Icon name="bug" size={14} /> Bug</button>
+      <button class="type-btn {type === 'SUGGESTION' ? 'active-sug' : ''}" onclick={() => type = 'SUGGESTION'}><Icon name="lightbulb" size={14} /> Sugerencia</button>
     </div>
 
     <div class="field">
@@ -80,7 +81,7 @@
     {/if}
 
     <button class="submit-btn" onclick={handleSubmit} disabled={saving || saved}>
-      {#if saved}✓ Enviado{:else if saving}Enviando…{:else}Enviar{/if}
+      {#if saved}Enviado{:else if saving}Enviando…{:else}Enviar{/if}
     </button>
   </div>
 </div>
@@ -109,6 +110,7 @@
     flex: 1; padding: 6px; border-radius: 8px; border: 1px solid #d0d0d0;
     font-size: 12px; cursor: pointer; background: white; font-family: inherit;
     transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
   }
   .active-bug  { background: #fff0f0; border-color: #ff3b30; color: #c0392b; font-weight: 600; }
   .active-sug  { background: #fffbe6; border-color: #ff9500; color: #7a4f00; font-weight: 600; }

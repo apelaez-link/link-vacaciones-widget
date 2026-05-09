@@ -17,7 +17,7 @@
   <div class="weekly-row">
     <span class="weekly-label">Acumulado semana</span>
     <span class="weekly-value" style="color: {color}">
-      {hours}h {mins > 0 ? `${mins}m` : ''}{over ? ' ⚠️' : ''}
+      {hours}h {mins > 0 ? `${mins}m` : ''}
     </span>
   </div>
   <div class="bar-bg">

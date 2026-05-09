@@ -1,6 +1,7 @@
 <script lang="ts">
   import { todayCheckin, pendingList } from '../stores/checkin';
   import { settings } from '../stores/settings';
+  import Icon from './Icon.svelte';
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://vacaciones.smartcity.link';
 
@@ -36,17 +37,20 @@
 
 {#if $pendingList.length > 0}
   <a class="warn warn-pending" href="{API_BASE}/checkins" target="_blank">
-    🔴 {$pendingList.length === 1 ? '1 fichaje abierto' : `${$pendingList.length} fichajes abiertos`} de días anteriores — ajústalos en la web →
+    <span class="pending-dot"></span>
+    {$pendingList.length === 1 ? '1 fichaje abierto' : `${$pendingList.length} fichajes abiertos`} de días anteriores — ajústalos en la web →
   </a>
 {/if}
 
 {#if show}
   <div class="warn">
-    <span>⚠️ Llevas {minutesLate ? `${minutesLate} min` : ''} más de tu jornada habitual</span>
+    <span class="warn-icon"><Icon name="warning" size={13} /></span>
+    <span>Llevas {minutesLate ? `${minutesLate} min` : ''} más de tu jornada habitual</span>
   </div>
 {:else if lateCheckin}
   <div class="warn">
-    <span>⚠️ Tu horario de referencia empezó hace un rato</span>
+    <span class="warn-icon"><Icon name="warning" size={13} /></span>
+    <span>Tu horario de referencia empezó hace un rato</span>
   </div>
 {/if}
 
@@ -55,10 +59,16 @@
     padding: 8px 16px;
     border-bottom: 1px solid rgba(0,0,0,0.08);
     background: #fff9e6;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .warn span { font-size: 11px; color: #7a4f00; }
+  .warn-icon { color: #c87f00; display: flex; align-items: center; flex-shrink: 0; }
   .warn-pending {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     background: #fff0f0;
     font-size: 11px;
     color: #b22222;
@@ -66,4 +76,8 @@
     cursor: pointer;
   }
   .warn-pending:hover { background: #ffe0e0; }
+  .pending-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e53935; flex-shrink: 0;
+  }
 </style>
