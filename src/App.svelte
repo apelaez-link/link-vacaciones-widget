@@ -238,19 +238,17 @@
   @media (min-height: 600px) {
     :global(html), :global(body) {
       background: #ffffff;
-      height: 100%;
+      height: 100dvh;
+      overflow: hidden; /* No body scroll — safe areas handled in components */
     }
     :global(body) {
-      padding: 0;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      overflow-y: auto;
+      padding: 0; /* Safe areas: UserHeader top, PopoverMain footer bottom */
     }
     .app {
       border-radius: 0;
       box-shadow: none;
-      min-height: 100dvh;
-      overflow: visible;
+      height: 100dvh; /* Exact — no overflow, no extra scroll space */
+      overflow: hidden;
     }
   }
 

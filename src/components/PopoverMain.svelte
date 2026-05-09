@@ -113,9 +113,9 @@
   .feedback-fab:hover { background: #0065d4; transform: scale(1.08); }
   .feedback-fab:active { transform: scale(0.96); }
 
-  /* Mobile: allow content to grow beyond fixed height */
+  /* Mobile: fill exact screen height, no external scroll */
   @media (min-height: 600px) {
-    .popover { height: auto; min-height: 100dvh; }
+    .popover { height: 100dvh; overflow-y: auto; }
     .footer { padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
     .footer-link { font-size: 14px; padding: 8px 6px; }
     .feedback-fab { width: 40px; height: 40px; }

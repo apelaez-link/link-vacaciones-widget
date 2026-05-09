@@ -70,7 +70,8 @@
 
   /* ── iOS 26: frosted glass header, larger avatar, SF Pro Display name ── */
   :global([data-platform="ios"]) .header {
-    padding: 18px 20px 14px;
+    /* padding-top = design padding + status bar height */
+    padding: calc(18px + env(safe-area-inset-top)) 20px 14px;
     background: rgba(255,255,255,0.82);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     backdrop-filter: blur(40px) saturate(180%);
@@ -90,7 +91,8 @@
 
   /* ── Android Material You: card-style header, tonal avatar ── */
   :global([data-platform="android"]) .header {
-    padding: 16px 16px 12px;
+    /* padding-top = design padding + status bar height */
+    padding: calc(16px + env(safe-area-inset-top)) 16px 12px;
     background: #FFFFFF;
     border-bottom: none;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);

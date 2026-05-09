@@ -212,4 +212,12 @@
   }
   .save-btn:hover:not(:disabled) { background: #0065d4; }
   .save-btn:disabled { opacity: 0.6; cursor: default; }
+
+  /* ── Mobile safe areas ── */
+  @media (min-height: 600px) {
+    .panel { height: 100dvh; overflow-y: auto; }
+    .header { padding-top: calc(12px + env(safe-area-inset-top)); }
+    .footer { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+    .save-btn { padding: 14px; font-size: 15px; border-radius: 12px; }
+  }
 </style>

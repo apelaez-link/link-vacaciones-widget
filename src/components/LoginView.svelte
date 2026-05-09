@@ -77,7 +77,12 @@
   @media (min-height: 600px) {
     .subtitle-desktop { display: none; }
     .subtitle-mobile { display: block; }
-    .login { gap: 16px; padding: 48px 32px; }
+    /* Full screen — center vertically accounting for status bar */
+    .login {
+      height: 100dvh;
+      gap: 16px;
+      padding: calc(48px + env(safe-area-inset-top)) 32px calc(48px + env(safe-area-inset-bottom));
+    }
     /* logo size is fixed at 48px via prop; scaling via CSS if needed */
     h2 { font-size: 24px; }
     p { font-size: 15px; }
@@ -128,7 +133,7 @@
   /* ── iOS 26: large centered card, SF Pro Display title, stadium button ── */
   :global([data-platform="ios"]) .login {
     background: #FFFFFF;
-    margin: 24px 16px;
+    margin: calc(24px + env(safe-area-inset-top)) 16px 24px;
     border-radius: 20px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     min-height: unset;
@@ -155,7 +160,7 @@
   /* ── Android Material You: tonal card, pill button, Roboto ── */
   :global([data-platform="android"]) .login {
     background: #FFFFFF;
-    margin: 24px 16px;
+    margin: calc(24px + env(safe-area-inset-top)) 16px 24px;
     border-radius: 28px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.06);
     padding: 40px 24px 36px;

@@ -94,7 +94,10 @@
   }
   .modal {
     background: white; border-radius: 14px 14px 0 0;
-    width: 100%; padding: 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    width: 100%;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
   }
   .modal-header {
     display: flex; justify-content: space-between; align-items: center;
