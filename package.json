@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:ios": "VITE_PORT=1421 vite",
+    "dev:android": "VITE_PORT=1422 vite",
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri"
