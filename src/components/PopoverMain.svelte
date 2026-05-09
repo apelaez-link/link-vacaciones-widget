@@ -10,6 +10,7 @@
   import { todayCheckin, isLoading } from '../stores/checkin';
   import { clockIn, clockOut } from '../lib/api';
   import { syncTrayIcon } from '../lib/tray';
+  import { openUrl } from '@tauri-apps/plugin-opener';
   import type { Location } from '../lib/types';
 
   const { onSettings, onSignOut, onRefresh }: {
@@ -75,7 +76,7 @@
   {/if}
 
   <div class="footer">
-    <a class="footer-link" href="{API_BASE}/checkins" target="_blank">Ver historial →</a>
+    <button class="footer-link" onclick={() => openUrl(`${API_BASE}/checkins`)}>Ver historial →</button>
     <button class="feedback-fab" onclick={() => showFeedback = true} title="Enviar feedback">💬</button>
     <button class="footer-link" onclick={onSettings}>Ajustes</button>
   </div>

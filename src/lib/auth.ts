@@ -1,10 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-shell';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://vacaciones.smartcity.link';
 
 export async function startLogin(): Promise<void> {
-  await open(`${API_BASE}/login?widget=1`);
+  await openUrl(`${API_BASE}/login?widget=1`);
 }
 
 export async function loadToken(): Promise<string | null> {
