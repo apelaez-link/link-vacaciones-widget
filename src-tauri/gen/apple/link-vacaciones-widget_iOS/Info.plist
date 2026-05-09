@@ -42,6 +42,8 @@
 	</array>
 	<key>LSUIElement</key>
 	<true/>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -53,7 +55,5 @@
 			</array>
 		</dict>
 	</array>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.productivity</string>
 </dict>
 </plist>
