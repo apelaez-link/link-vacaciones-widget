@@ -7,20 +7,56 @@ use crate::auth;
 use crate::tray;
 
 // ── Token management ──────────────────────────────────────────────────────
+// Desktop: macOS Keychain via security_framework
+// Mobile:  tauri-plugin-store (Keychain requires entitlements we don't sign with)
+
+const AUTH_STORE: &str = "auth.json";
+const TOKEN_KEY: &str = "session-token";
 
 #[tauri::command]
-pub fn load_token() -> Result<Option<String>, String> {
-    auth::load_token()
+pub fn load_token(app: AppHandle) -> Result<Option<String>, String> {
+    #[cfg(not(desktop))]
+    {
+        let store = app.store(AUTH_STORE).map_err(|e| e.to_string())?;
+        return Ok(store
+            .get(TOKEN_KEY)
+            .and_then(|v| v.as_str().map(String::from)));
+    }
+    #[cfg(desktop)]
+    {
+        let _ = app;
+        auth::load_token()
+    }
 }
 
 #[tauri::command]
-pub fn delete_token() -> Result<(), String> {
-    auth::delete_token()
+pub fn delete_token(app: AppHandle) -> Result<(), String> {
+    #[cfg(not(desktop))]
+    {
+        let store = app.store(AUTH_STORE).map_err(|e| e.to_string())?;
+        store.delete(TOKEN_KEY);
+        return store.save().map_err(|e| e.to_string());
+    }
+    #[cfg(desktop)]
+    {
+        let _ = app;
+        auth::delete_token()
+    }
 }
 
 #[tauri::command]
-pub fn save_token(token: String) -> Result<(), String> {
-    auth::save_token(&token)
+pub fn save_token(app: AppHandle, token: String) -> Result<(), String> {
+    #[cfg(not(desktop))]
+    {
+        let store = app.store(AUTH_STORE).map_err(|e| e.to_string())?;
+        store.set(TOKEN_KEY, token.clone());
+        return store.save().map_err(|e| e.to_string());
+    }
+    #[cfg(desktop)]
+    {
+        let _ = app;
+        auth::save_token(&token)
+    }
 }
 
 // ── Tray icon control (no-op on mobile) ───────────────────────────────────

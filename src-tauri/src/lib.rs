@@ -136,6 +136,21 @@ fn rect_to_f64(rect: &tauri::Rect) -> (f64, f64, f64, f64) {
     (x, y, w, h)
 }
 
+fn save_token_cross_platform(app: &tauri::AppHandle, token: &str) -> Result<(), String> {
+    #[cfg(not(desktop))]
+    {
+        use tauri_plugin_store::StoreExt;
+        let store = app.store("auth.json").map_err(|e| e.to_string())?;
+        store.set("session-token", token.to_string());
+        store.save().map_err(|e| e.to_string())
+    }
+    #[cfg(desktop)]
+    {
+        let _ = app;
+        auth::save_token(token)
+    }
+}
+
 fn handle_deep_link(app: &tauri::AppHandle, url: &str) {
     if !url.starts_with("linkfichajes://") {
         return;
@@ -146,7 +161,7 @@ fn handle_deep_link(app: &tauri::AppHandle, url: &str) {
             if parts.next() == Some("token") {
                 if let Some(token) = parts.next() {
                     let decoded = percent_decode(token);
-                    if let Err(e) = auth::save_token(&decoded) {
+                    if let Err(e) = save_token_cross_platform(app, &decoded) {
                         eprintln!("[widget] Failed to save token: {}", e);
                         return;
                     }
