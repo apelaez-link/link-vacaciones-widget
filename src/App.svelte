@@ -65,6 +65,15 @@
       startPolling();
     });
 
+    // On mobile cold-start via deep link, the token may be saved to the store
+    // before onMount runs. initAuth() above might have missed it if the background
+    // thread hadn't written yet. Retry once after 1s as a belt-and-suspenders fallback.
+    if (view === 'login') {
+      setTimeout(async () => {
+        if (view === 'login') await initAuth();
+      }, 1000);
+    }
+
     // Refrescar datos al abrir el widget desde el tray
     unlistenFocus = await listen('widget-focused', async () => {
       if (get(isAuthenticated)) {

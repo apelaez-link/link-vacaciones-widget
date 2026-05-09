@@ -53,9 +53,15 @@ pub fn run() {
             // Listen for deep link URL scheme events: linkfichajes://auth?token=...
             let handle_for_deeplink = app.handle().clone();
             app.deep_link().on_open_url(move |event| {
-                for url in event.urls() {
-                    handle_deep_link(&handle_for_deeplink, url.as_str());
-                }
+                let urls: Vec<String> = event.urls().iter().map(|u| u.to_string()).collect();
+                let handle = handle_for_deeplink.clone();
+                // Spawn a background thread so store I/O never blocks the main thread
+                // (avoids ANR on Android when the deep link arrives on cold start)
+                std::thread::spawn(move || {
+                    for url in urls {
+                        handle_deep_link(&handle, &url);
+                    }
+                });
             });
 
             // ── Desktop only: tray icon + sleep listener ──
@@ -165,6 +171,11 @@ fn handle_deep_link(app: &tauri::AppHandle, url: &str) {
                         eprintln!("[widget] Failed to save token: {}", e);
                         return;
                     }
+                    // On mobile, the WebView may not have loaded yet on cold start.
+                    // The token is already in the store so initAuth() will pick it up.
+                    // A short delay ensures the auth:token-received listener is registered.
+                    #[cfg(not(desktop))]
+                    std::thread::sleep(std::time::Duration::from_millis(2500));
                     let _ = app.emit("auth:token-received", decoded);
                     // On desktop: bring window to front
                     #[cfg(desktop)]
