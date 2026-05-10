@@ -286,6 +286,7 @@ jobs:
   # ═══════════════════════════════════════════════════════════════════════════
   # iOS — .ipa firmado ad-hoc (requiere secrets APPLE_*)
   # Prerequisito: Apple Developer Account ($99/año) + provisioning profile
+  # Para configurar: ver docs/ios-setup.md
   # ═══════════════════════════════════════════════════════════════════════════
   build-ios:
     name: Build iOS (.ipa)
@@ -299,33 +300,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ── Verificar que los secrets iOS están configurados ───────────────────
+      - name: Check iOS secrets
+        id: check_secrets
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ] || [ -z "$APPLE_PROVISIONING_PROFILE" ]; then
+            echo "::warning::Secrets APPLE_CERTIFICATE / APPLE_PROVISIONING_PROFILE no configurados. Saltando build iOS."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Node.js
+        if: steps.check_secrets.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Setup Rust
+        if: steps.check_secrets.outputs.skip != 'true'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios
 
       - name: Cache Rust build
+        if: steps.check_secrets.outputs.skip != 'true'
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
 
       - name: Install CocoaPods
+        if: steps.check_secrets.outputs.skip != 'true'
         run: gem install cocoapods --no-document
 
       - name: Install JS dependencies
+        if: steps.check_secrets.outputs.skip != 'true'
         run: npm ci
 
       - name: Create .env
+        if: steps.check_secrets.outputs.skip != 'true'
         run: echo "VITE_API_BASE_URL=https://vacaciones.smartcity.link" > .env
 
       # Instalar certificado de distribución
       - name: Import Apple certificate
+        if: steps.check_secrets.outputs.skip != 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -341,6 +363,7 @@ jobs:
 
       # Instalar perfil de aprovisionamiento (ad-hoc)
       - name: Install provisioning profile
+        if: steps.check_secrets.outputs.skip != 'true'
         env:
           APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
@@ -350,11 +373,13 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Install iOS Pods
+        if: steps.check_secrets.outputs.skip != 'true'
         run: |
           cd src-tauri/gen/apple
           pod install --repo-update
 
       - name: Build iOS app
+        if: steps.check_secrets.outputs.skip != 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -363,6 +388,7 @@ jobs:
             --export-method ad-hoc
 
       - name: Find and rename IPA
+        if: steps.check_secrets.outputs.skip != 'true'
         run: |
           IPA=$(find src-tauri/gen/apple/build -name "*.ipa" | head -1)
           echo "Found IPA: $IPA"
@@ -371,7 +397,7 @@ jobs:
 
       # ── Subir IPA al release en tags ──────────────────────────────────────
       - name: Upload IPA to release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.check_secrets.outputs.skip != 'true' && startsWith(github.ref, 'refs/tags/v')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -404,6 +430,7 @@ jobs:
 
       # ── Artefacto en push a main ───────────────────────────────────────────
       - name: Upload IPA artifact
+        if: steps.check_secrets.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: LinkFichajes-ios-${{ github.sha }}
