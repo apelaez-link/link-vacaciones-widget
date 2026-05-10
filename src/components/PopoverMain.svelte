@@ -8,7 +8,7 @@
   import TodayLog from './TodayLog.svelte';
   import FeedbackModal from './FeedbackModal.svelte';
   import { todayCheckin, isLoading } from '../stores/checkin';
-  import { clockIn, clockOut } from '../lib/api';
+  import { clockIn, clockOut, pauseCheckin, resumeCheckin } from '../lib/api';
   import { syncTrayIcon } from '../lib/tray';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import type { Location } from '../lib/types';
@@ -56,6 +56,36 @@
     }
   }
 
+  async function handlePause() {
+    const checkin = $todayCheckin;
+    if (!checkin) return;
+    isLoading.set(true);
+    apiError = null;
+    try {
+      const result = await pauseCheckin(checkin.id);
+      todayCheckin.set(result);
+    } catch (e) {
+      apiError = (e as Error).message;
+    } finally {
+      isLoading.set(false);
+    }
+  }
+
+  async function handleResume() {
+    const checkin = $todayCheckin;
+    if (!checkin) return;
+    isLoading.set(true);
+    apiError = null;
+    try {
+      const result = await resumeCheckin(checkin.id);
+      todayCheckin.set(result);
+    } catch (e) {
+      apiError = (e as Error).message;
+    } finally {
+      isLoading.set(false);
+    }
+  }
+
   let showLocationPicker = $derived(!$todayCheckin || !!$todayCheckin.checked_out_at);
 </script>
 
@@ -70,7 +100,7 @@
       <LocationPicker selected={selectedLocation} onSelect={(l) => selectedLocation = l} />
     {/if}
 
-    <ClockButton location={selectedLocation} onClockIn={handleClockIn} onClockOut={handleClockOut} />
+    <ClockButton location={selectedLocation} onClockIn={handleClockIn} onClockOut={handleClockOut} onPause={handlePause} onResume={handleResume} />
     <TodayLog />
 
     {#if apiError}

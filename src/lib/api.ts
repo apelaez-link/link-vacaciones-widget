@@ -40,6 +40,20 @@ export async function clockOut(id: string): Promise<CheckIn> {
   });
 }
 
+export async function pauseCheckin(id: string): Promise<CheckIn> {
+  return apiFetch<CheckIn>(`/api/checkin/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'pause' }),
+  });
+}
+
+export async function resumeCheckin(id: string): Promise<CheckIn> {
+  return apiFetch<CheckIn>(`/api/checkin/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'resume' }),
+  });
+}
+
 export async function fetchUserProfile(): Promise<{ name: string; email: string; role: string }> {
   return apiFetch('/api/auth/me');
 }

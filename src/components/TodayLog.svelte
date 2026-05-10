@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { todayCheckin } from '../stores/checkin';
+  import { todayCheckin, isPaused, elapsedTime } from '../stores/checkin';
   import { LOCATION_ICON_NAMES } from '../lib/types';
   import Icon from './Icon.svelte';
 
@@ -8,28 +8,33 @@
   }
 
   function fmtMinutes(m: number | null) {
-    if (!m) return '–';
-    const h = Math.floor(m / 60);
+    if (m == null || m <= 0) return '0h 0m';
+    const h   = Math.floor(m / 60);
     const min = m % 60;
     return h > 0 ? `${h}h ${min}m` : `${min}m`;
   }
 
-  let elapsed = $derived.by(() => {
-    const c = $todayCheckin;
-    if (!c || c.checked_out_at || !c.checked_in_at) return null;
-    const ms = Date.now() - new Date(c.checked_in_at).getTime();
-    const h = Math.floor(ms / 3_600_000);
-    const m = Math.floor((ms % 3_600_000) / 60_000);
-    return h * 60 + m;
-  });
+  // breaks cerradas (para mostrar en el log)
+  let closedBreaks = $derived(
+    ($todayCheckin?.breaks ?? []).filter(b => b.ended_at)
+  );
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://vacaciones.smartcity.link';
+  // pausa activa
+  let activeBreak = $derived(
+    ($todayCheckin?.breaks ?? []).find(b => !b.ended_at) ?? null
+  );
+
+  // minutos de pausa total (cerradas)
+  let totalBreakMinutes = $derived(
+    closedBreaks.reduce((sum, b) => sum + (b.minutes ?? 0), 0)
+  );
 </script>
 
 <div class="log">
   <div class="section-label">Hoy</div>
 
   {#if $todayCheckin}
+    <!-- Entrada -->
     <div class="log-row">
       <div class="log-type">
         <span class="dot dot-green"></span>
@@ -38,24 +43,49 @@
       <div class="log-time">{fmt($todayCheckin.checked_in_at)}</div>
     </div>
 
+    <!-- Pausas cerradas -->
+    {#each closedBreaks as brk}
+      <div class="log-row break-row">
+        <div class="log-type"><span class="dot dot-orange"></span> Pausa · {fmtMinutes(brk.minutes)}</div>
+        <div class="log-time">{fmt(brk.started_at)} – {fmt(brk.ended_at!)}</div>
+      </div>
+    {/each}
+
+    <!-- Pausa activa -->
+    {#if activeBreak}
+      <div class="log-row break-row">
+        <div class="log-type"><span class="dot dot-orange pulse"></span> En pausa desde</div>
+        <div class="log-time">{fmt(activeBreak.started_at)}</div>
+      </div>
+    {/if}
+
+    <!-- Salida -->
     {#if $todayCheckin.checked_out_at}
       <div class="log-row">
         <div class="log-type"><span class="dot dot-red"></span> Salida</div>
         <div class="log-time">{fmt($todayCheckin.checked_out_at)}</div>
       </div>
-    {:else}
+    {:else if !$isPaused}
       <div class="log-row muted">
         <div class="log-type"><span class="dot dot-gray"></span> Salida estimada</div>
         <div class="log-time">–</div>
       </div>
     {/if}
 
+    <!-- Total -->
     <div class="log-total">
-      <div class="log-total-label">Acumulado hoy</div>
+      <div class="log-total-label">
+        {$isPaused ? 'En pausa' : 'Acumulado hoy'}
+        {#if totalBreakMinutes > 0 && !$todayCheckin.checked_out_at}
+          <span class="break-note">({fmtMinutes(totalBreakMinutes)} pausa)</span>
+        {/if}
+      </div>
       <div class="log-total-val">
-        {$todayCheckin.checked_out_at
-          ? fmtMinutes($todayCheckin.total_minutes)
-          : fmtMinutes(elapsed)}
+        {#if $todayCheckin.checked_out_at}
+          {fmtMinutes($todayCheckin.total_minutes)}
+        {:else}
+          {$elapsedTime ?? '0h 0m'}
+        {/if}
       </div>
     </div>
   {:else}
@@ -64,7 +94,7 @@
     </div>
     <div class="log-total">
       <div class="log-total-label">Acumulado hoy</div>
-      <div class="log-total-val">0h 00m</div>
+      <div class="log-total-val">0h 0m</div>
     </div>
   {/if}
 </div>
@@ -82,9 +112,17 @@
   .log-type { font-size: 12px; color: #666; display: flex; align-items: center; gap: 5px; }
   .log-time { font-size: 12px; font-weight: 500; color: #1c1c1e; }
   .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-  .dot-green { background: #34c759; }
-  .dot-red { background: #ff3b30; }
-  .dot-gray { background: #aeaeb2; }
+  .dot-green  { background: #34c759; }
+  .dot-red    { background: #ff3b30; }
+  .dot-gray   { background: #aeaeb2; }
+  .dot-orange { background: #ff9500; }
+  .dot.pulse  { animation: pulse-dot 1.4s ease-in-out infinite; }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+  .break-row .log-type { color: #ff9500; }
+  .break-note { font-size: 10px; color: #aaa; margin-left: 4px; }
   .log-total {
     display: flex; justify-content: space-between; margin-top: 8px;
     padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.07);

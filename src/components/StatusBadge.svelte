@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { todayCheckin, elapsedTime } from '../stores/checkin';
+  import { todayCheckin, elapsedTime, isPaused } from '../stores/checkin';
   import { settings } from '../stores/settings';
 
   function timeHHMM(iso: string) {
@@ -27,7 +27,13 @@
 
 <div class="status-section">
   <div class="status-row">
-    {#if $todayCheckin && !$todayCheckin.checked_out_at}
+    {#if $isPaused && $todayCheckin}
+      <div class="badge badge-paused">
+        <span class="dot dot-orange pulse"></span>
+        En pausa · desde las {timeHHMM($todayCheckin.checked_in_at)}
+      </div>
+      <div class="time-since">{$elapsedTime ?? ''}</div>
+    {:else if $todayCheckin && !$todayCheckin.checked_out_at}
       <div class="badge badge-in">
         <span class="dot dot-green"></span>
         Fichado desde las {timeHHMM($todayCheckin.checked_in_at)}
@@ -57,13 +63,20 @@
     display: flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 20px;
   }
-  .badge-in { background: #d4f5e2; color: #1a6b3a; }
-  .badge-out { background: #ffe5e5; color: #b22222; }
+  .badge-in     { background: #d4f5e2; color: #1a6b3a; }
+  .badge-out    { background: #ffe5e5; color: #b22222; }
   .badge-closed { background: #f0f0f0; color: #666; }
+  .badge-paused { background: #fff3e0; color: #b45309; }
   .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .dot-green { background: #34c759; }
-  .dot-red { background: #ff3b30; }
-  .dot-gray { background: #aeaeb2; }
+  .dot-green  { background: #34c759; }
+  .dot-red    { background: #ff3b30; }
+  .dot-gray   { background: #aeaeb2; }
+  .dot-orange { background: #ff9500; }
+  .dot.pulse  { animation: pulse-dot 1.4s ease-in-out infinite; }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
   .time-since { font-size: 11px; color: #888; }
   .time-since.late { color: #b22222; }
 
