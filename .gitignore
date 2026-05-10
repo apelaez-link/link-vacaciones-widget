@@ -39,3 +39,9 @@ vite.config.ts.timestamp-*
 # Logs
 *.log
 npm-debug.log*
+*.mobileprovision
+*.p12
+src-tauri/gen/apple/Pods/
+src-tauri/gen/apple/Podfile.lock
+src-tauri/gen/apple/link-vacaciones-widget.xcworkspace/
+debug.keystore
