@@ -60,21 +60,23 @@
 </script>
 
 <div class="popover">
-  <UserHeader {onSettings} {onSignOut} {onRefresh} />
-  <StatusBadge />
-  <WarningBanner />
-  <WeeklySummary />
+  <div class="scroll-content">
+    <UserHeader {onSettings} {onSignOut} {onRefresh} />
+    <StatusBadge />
+    <WarningBanner />
+    <WeeklySummary />
 
-  {#if showLocationPicker}
-    <LocationPicker selected={selectedLocation} onSelect={(l) => selectedLocation = l} />
-  {/if}
+    {#if showLocationPicker}
+      <LocationPicker selected={selectedLocation} onSelect={(l) => selectedLocation = l} />
+    {/if}
 
-  <ClockButton location={selectedLocation} onClockIn={handleClockIn} onClockOut={handleClockOut} />
-  <TodayLog />
+    <ClockButton location={selectedLocation} onClockIn={handleClockIn} onClockOut={handleClockOut} />
+    <TodayLog />
 
-  {#if apiError}
-    <div class="error">{apiError}</div>
-  {/if}
+    {#if apiError}
+      <div class="error">{apiError}</div>
+    {/if}
+  </div>
 
   <div class="footer">
     <button class="footer-link" onclick={() => openUrl(`${API_BASE}/checkins`)}><Icon name="history" size={13} /> Historial</button>
@@ -83,16 +85,21 @@
   </div>
 </div>
 
+
 {#if showFeedback}
   <FeedbackModal onClose={() => showFeedback = false} />
 {/if}
 
 <style>
+  /* ── Base layout: flex column so footer sticks to bottom ── */
   .popover { display: flex; flex-direction: column; height: 100%; }
+  /* scroll-content: takes all available space, scrolls internally */
+  .scroll-content { flex: 1; overflow-y: auto; min-height: 0; }
   .error { padding: 6px 16px; font-size: 11px; color: #cc3333; background: #fff0f0; }
   .footer {
+    flex-shrink: 0;
     padding: 6px 12px; display: flex; justify-content: space-between; align-items: center;
-    margin-top: auto; border-top: 1px solid rgba(0,0,0,0.06);
+    border-top: 1px solid rgba(0,0,0,0.06);
     gap: 4px;
   }
   .footer-link {
@@ -113,25 +120,42 @@
   .feedback-fab:hover { background: #0065d4; transform: scale(1.08); }
   .feedback-fab:active { transform: scale(0.96); }
 
-  /* Mobile: fill exact screen height, no external scroll */
+  /* Mobile: fill exact screen height */
   @media (min-height: 600px) {
-    .popover { height: 100dvh; overflow-y: auto; }
+    .popover { height: 100dvh; overflow: hidden; }
+    .scroll-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .footer { padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
     .footer-link { font-size: 14px; padding: 8px 6px; }
     .feedback-fab { width: 40px; height: 40px; }
   }
 
-  /* ── iOS 26: grouped background sections, frosted footer ── */
-  /* .popover is scoped: :global([data-platform="ios"]) .popover compiles to
-     [data-platform="ios"] .popover.svelte-xxxx — higher specificity, wins */
-  :global([data-platform="ios"]) .popover { background: #F2F2F7 !important; }
+  /* ── iOS: flex layout — footer always at screen bottom ──
+     .popover = full-screen flex column (100dvh).
+     .scroll-content = flex:1, scrolls internally.
+     .footer = flex-shrink:0, last child → sits at the very bottom. */
+  :global([data-platform="ios"]) .popover {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    background: #F2F2F7 !important;
+    overscroll-behavior: none;
+  }
+  :global([data-platform="ios"]) .scroll-content {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
   :global([data-platform="ios"]) .footer {
-    background: rgba(255,255,255,0.82);
+    flex-shrink: 0 !important;
+    background: rgba(249,249,249,0.94);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     backdrop-filter: blur(40px) saturate(180%);
     border-top: 0.5px solid rgba(60,60,67,0.29);
     padding: 14px 20px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    padding-bottom: calc(14px + var(--ios-safe-bottom, env(safe-area-inset-bottom)));
   }
   :global([data-platform="ios"]) .footer-link {
     font-size: 15px; color: #007AFF; font-weight: 500;

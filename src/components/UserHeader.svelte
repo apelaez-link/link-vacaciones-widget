@@ -70,8 +70,8 @@
 
   /* ── iOS 26: frosted glass header, larger avatar, SF Pro Display name ── */
   :global([data-platform="ios"]) .header {
-    /* padding-top = design padding + status bar height */
-    padding: calc(18px + env(safe-area-inset-top)) 20px 14px;
+    /* padding-top = 8px visual gap below Dynamic Island/notch + safe area */
+    padding: calc(8px + env(safe-area-inset-top)) 20px 14px;
     background: rgba(255,255,255,0.82);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     backdrop-filter: blur(40px) saturate(180%);

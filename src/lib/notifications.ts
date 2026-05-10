@@ -1,4 +1,5 @@
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
+import { fetchIsWorkingDay } from './api';
 import type { CheckIn, WidgetSettings } from './types';
 
 let refInTimer: ReturnType<typeof setTimeout> | null = null;
@@ -37,6 +38,10 @@ function markFired(key: string): void {
 
 export async function scheduleNotifications(cfg: WidgetSettings, today: CheckIn | null): Promise<void> {
   clearScheduled();
+
+  // Skip all notifications on weekends, public holidays, and user vacation days
+  const isWorkingDay = await fetchIsWorkingDay();
+  if (!isWorkingDay) return;
 
   const now = Date.now();
 

@@ -79,6 +79,32 @@ export async function saveUserSettings(s: WidgetSettings): Promise<void> {
   });
 }
 
+/**
+ * Returns true when today is a day the user is expected to work.
+ *
+ * Fast path: weekends (Saturday/Sunday) return false immediately.
+ *
+ * Slow path: calls /api/users/me/working-day?date=YYYY-MM-DD, which the
+ * backend can implement to check public holidays and approved vacation requests.
+ * Falls back to true (working day assumed) when the endpoint is unavailable so
+ * notifications are never silenced without certainty.
+ */
+export async function fetchIsWorkingDay(): Promise<boolean> {
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) return false; // Sun = 0, Sat = 6
+
+  try {
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const data = await apiFetch<{ working_day: boolean }>(`/api/users/me/working-day?date=${dateStr}`);
+    return data.working_day;
+  } catch {
+    // Endpoint not available or request failed — assume working day to avoid
+    // silencing notifications when we can't confirm the user is off.
+    return true;
+  }
+}
+
 export async function fetchWeekSummary(): Promise<{ total_minutes: number }> {
   try {
     const today = new Date();

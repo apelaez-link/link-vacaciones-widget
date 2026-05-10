@@ -1,6 +1,6 @@
 {
   "name": "link-vacaciones-widget",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Link Fichajes — macOS Menu Bar Widget",
   "type": "module",
   "scripts": {
@@ -9,7 +9,9 @@
     "dev:android": "VITE_PORT=1422 vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:android": "tauri android",
+    "tauri:ios": "tauri ios"
   },
   "license": "MIT",
   "dependencies": {

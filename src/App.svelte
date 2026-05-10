@@ -36,22 +36,41 @@
   }
 
   onMount(async () => {
-    document.documentElement.dataset.platform = detectPlatform();
+    const platform = detectPlatform();
+    document.documentElement.dataset.platform = platform;
+
+    // iOS: measure env(safe-area-inset-bottom) via a probe element.
+    // Heights use 100dvh in CSS (= window.innerHeight in WKWebView) — no JS needed for that.
+    if (platform === 'ios') {
+      const applySafeArea = () => {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden;';
+        document.body.appendChild(probe);
+        const safeBottom = probe.offsetHeight;
+        document.body.removeChild(probe);
+        // --ios-safe-bottom drives footer padding-bottom in PopoverMain & SettingsPanel
+        document.documentElement.style.setProperty('--ios-safe-bottom', `${safeBottom}px`);
+      };
+      applySafeArea();
+      window.addEventListener('resize', applySafeArea);
+    }
     // Pedir permiso de notificaciones al arrancar (solo la primera vez)
     const granted = await isPermissionGranted();
     if (!granted) await requestPermission();
 
-    // Ajustar altura de la ventana al contenido (dinámica)
-    const appEl = document.querySelector('.app') as HTMLElement | null;
-    if (appEl) {
-      const win = getCurrentWebviewWindow();
-      const updateHeight = () => {
-        const h = appEl.offsetHeight + 18; // 18 = 9px padding top + bottom
-        win.setSize(new LogicalSize(320, h)).catch(() => {});
-      };
-      resizeObserver = new ResizeObserver(updateHeight);
-      resizeObserver.observe(appEl);
-      updateHeight();
+    // Ajustar altura de la ventana al contenido — solo en macOS (en iOS/Android la ventana es pantalla completa)
+    if (platform === 'macos') {
+      const appEl = document.querySelector('.app') as HTMLElement | null;
+      if (appEl) {
+        const win = getCurrentWebviewWindow();
+        const updateHeight = () => {
+          const h = appEl.offsetHeight + 18; // 18 = 9px padding top + bottom
+          win.setSize(new LogicalSize(320, h)).catch(() => {});
+        };
+        resizeObserver = new ResizeObserver(updateHeight);
+        resizeObserver.observe(appEl);
+        updateHeight();
+      }
     }
 
     await initAuth();
@@ -239,22 +258,38 @@
     :global(html), :global(body) {
       background: #ffffff;
       height: 100dvh;
-      overflow: hidden; /* No body scroll — safe areas handled in components */
+      overflow: hidden;
+      overscroll-behavior: none;
     }
     :global(body) {
-      padding: 0; /* Safe areas: UserHeader top, PopoverMain footer bottom */
+      padding: 0;
     }
     .app {
       border-radius: 0;
       box-shadow: none;
-      height: 100dvh; /* Exact — no overflow, no extra scroll space */
+      height: 100dvh;
       overflow: hidden;
     }
   }
 
+  /* ── iOS: full-screen layout ──
+     100dvh = window.innerHeight in WKWebView (no JS variable needed).
+     The 28px native zone below the WKWebView is covered by tauri.ios.conf.json backgroundColor. */
+  :global([data-platform="ios"] body) {
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  :global([data-platform="ios"]) .app {
+    height: 100dvh !important;
+    overflow: hidden !important;
+    background: #F2F2F7 !important;
+  }
+
   /* ── Touch target enlargement on mobile ── */
+  /* Toggles (.toggle) are excluded — they use visual height 20–31px;
+     the surrounding .row provides the real 44px tap area */
   @media (pointer: coarse) {
-    :global(button), :global(a) {
+    :global(button:not(.toggle)), :global(a) {
       min-height: 44px;
     }
   }
@@ -280,7 +315,10 @@
   }
 
   /* iOS 26: spacious, frosted, SF Pro, stadium CTAs */
+  /* IMPORTANT: [data-platform="ios"] is on <html> — setting background here
+     prevents the WKWebView black bleed-through in any uncovered pixel area */
   :global([data-platform="ios"]) {
+    background: #F2F2F7 !important;
     --pt-accent:        #007AFF;
     --pt-accent-hover:  #005EC4;
     --pt-radius-btn:    14px;
@@ -303,6 +341,7 @@
 
   /* Android Material You: Roboto, pill CTAs, tonal surfaces */
   :global([data-platform="android"]) {
+    background: #ECF0FF !important;
     --pt-accent:        #4085F7;
     --pt-accent-hover:  #2D6FE8;
     --pt-radius-btn:    100px;

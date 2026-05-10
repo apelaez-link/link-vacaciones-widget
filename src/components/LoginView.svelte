@@ -130,16 +130,21 @@
   }
   .dev-btn:hover:not(:disabled) { background: #d97706; }
 
-  /* ── iOS 26: large centered card, SF Pro Display title, stadium button ── */
+  /* ── iOS: full-screen centered layout — no floating card, no dead space ── */
+  /* Covers iPhone 11 → 17 and all Pro models (812px – 956px viewport heights) */
   :global([data-platform="ios"]) .login {
+    /* Fill the entire screen edge to edge */
     background: #FFFFFF;
-    margin: calc(24px + env(safe-area-inset-top)) 16px 24px;
-    border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    height: 100% !important;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
     min-height: unset;
-    height: auto;
-    padding: 40px 28px 36px;
-    gap: 14px;
+    /* Push content away from Dynamic Island (top) and home bar (bottom) */
+    padding: calc(env(safe-area-inset-top) + 48px) 36px calc(env(safe-area-inset-bottom) + 40px);
+    gap: 18px;
+    /* Center content vertically in the available space */
+    justify-content: center;
   }
   :global([data-platform="ios"]) h2 {
     font-size: 28px; font-weight: 700;
@@ -157,16 +162,17 @@
   :global([data-platform="ios"]) button:not(:disabled):active { transform: scale(0.97); }
   :global([data-platform="ios"]) .hint { font-size: 14px; color: #8E8E93; }
 
-  /* ── Android Material You: tonal card, pill button, Roboto ── */
+  /* ── Android Material You: full-screen, pill button, Roboto ── */
   :global([data-platform="android"]) .login {
     background: #FFFFFF;
-    margin: calc(24px + env(safe-area-inset-top)) 16px 24px;
-    border-radius: 28px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.06);
-    padding: 40px 24px 36px;
+    height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: calc(env(safe-area-inset-top) + 48px) 28px calc(env(safe-area-inset-bottom) + 40px);
     gap: 12px;
-    height: auto;
     min-height: unset;
+    justify-content: center;
   }
   :global([data-platform="android"]) h2 {
     font-size: 24px; font-weight: 500;

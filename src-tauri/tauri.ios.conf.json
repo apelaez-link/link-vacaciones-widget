@@ -2,5 +2,14 @@
   "build": {
     "beforeDevCommand": "npm run dev:ios",
     "devUrl": "http://localhost:1421"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "popover",
+        "transparent": false,
+        "backgroundColor": "#F9F9F9FF"
+      }
+    ]
   }
 }
