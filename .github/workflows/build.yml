@@ -213,6 +213,9 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > src-tauri/gen/android/app/linkfichajes.jks
 
       # Escribir las propiedades de firma para Gradle
+      # key.properties se escribe en la raíz del proyecto Android (rootProject),
+      # no en app/, para que rootProject.file("key.properties") lo encuentre.
+      # NO se escribe en tauri.properties porque Tauri lo regenera durante el build.
       - name: Write signing config
         if: env.ANDROID_KEY_ALIAS != ''
         env:
@@ -220,11 +223,11 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |
-          printf 'KEYSTORE_PATH=linkfichajes.jks\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\nSTORE_PASSWORD=%s\n' \
+          printf 'KEYSTORE_PATH=app/linkfichajes.jks\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\nSTORE_PASSWORD=%s\n' \
             "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" "$ANDROID_STORE_PASSWORD" \
-            > src-tauri/gen/android/app/tauri.properties
-          echo "tauri.properties:"
-          cat src-tauri/gen/android/app/tauri.properties
+            > src-tauri/gen/android/key.properties
+          echo "key.properties:"
+          cat src-tauri/gen/android/key.properties
 
       - name: Build Android APK
         run: npm run tauri android build -- --apk

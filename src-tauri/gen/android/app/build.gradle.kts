@@ -13,6 +13,13 @@ val tauriProperties = Properties().apply {
     }
 }
 
+val keyProperties = Properties().apply {
+    val propFile = rootProject.file("key.properties")
+    if (propFile.exists()) {
+        propFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     compileSdk = 36
     namespace = "link.smartcity.fichajes"
@@ -26,15 +33,15 @@ android {
     }
     signingConfigs {
         create("release") {
-            val keystorePath = tauriProperties.getProperty("KEYSTORE_PATH")
-            val keyAlias    = tauriProperties.getProperty("KEY_ALIAS")
-            val keyPassword = tauriProperties.getProperty("KEY_PASSWORD")
-            val storePass   = tauriProperties.getProperty("STORE_PASSWORD")
-            if (keystorePath != null && keyAlias != null) {
-                storeFile     = file(keystorePath)
-                this.keyAlias = keyAlias
-                this.keyPassword     = keyPassword
-                this.storePassword   = storePass
+            val keystorePath = keyProperties.getProperty("KEYSTORE_PATH")
+            val kAlias       = keyProperties.getProperty("KEY_ALIAS")
+            val kPassword    = keyProperties.getProperty("KEY_PASSWORD")
+            val storePass    = keyProperties.getProperty("STORE_PASSWORD")
+            if (keystorePath != null && kAlias != null) {
+                storeFile      = rootProject.file(keystorePath)
+                keyAlias       = kAlias
+                keyPassword    = kPassword
+                storePassword  = storePass
             }
         }
     }
