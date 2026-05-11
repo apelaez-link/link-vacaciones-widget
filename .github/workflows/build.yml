@@ -220,12 +220,11 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |
-          cat > src-tauri/gen/android/app/tauri.properties <<EOF
-          KEYSTORE_PATH=linkfichajes.jks
-          KEY_ALIAS=$ANDROID_KEY_ALIAS
-          KEY_PASSWORD=$ANDROID_KEY_PASSWORD
-          STORE_PASSWORD=$ANDROID_STORE_PASSWORD
-          EOF
+          printf 'KEYSTORE_PATH=linkfichajes.jks\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\nSTORE_PASSWORD=%s\n' \
+            "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" "$ANDROID_STORE_PASSWORD" \
+            > src-tauri/gen/android/app/tauri.properties
+          echo "tauri.properties:"
+          cat src-tauri/gen/android/app/tauri.properties
 
       - name: Build Android APK
         run: npm run tauri android build -- --apk

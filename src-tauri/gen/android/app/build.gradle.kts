@@ -24,6 +24,20 @@ android {
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
+    signingConfigs {
+        create("release") {
+            val keystorePath = tauriProperties.getProperty("KEYSTORE_PATH")
+            val keyAlias    = tauriProperties.getProperty("KEY_ALIAS")
+            val keyPassword = tauriProperties.getProperty("KEY_PASSWORD")
+            val storePass   = tauriProperties.getProperty("STORE_PASSWORD")
+            if (keystorePath != null && keyAlias != null) {
+                storeFile     = file(keystorePath)
+                this.keyAlias = keyAlias
+                this.keyPassword     = keyPassword
+                this.storePassword   = storePass
+            }
+        }
+    }
     buildTypes {
         getByName("debug") {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
@@ -37,6 +51,7 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }
