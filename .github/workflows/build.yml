@@ -399,7 +399,7 @@ jobs:
         run: |
           npm run tauri ios build -- \
             --target aarch64 \
-            --export-method ad-hoc
+            --export-method release-testing
 
       - name: Find and rename IPA
         if: steps.check_secrets.outputs.skip != 'true'
