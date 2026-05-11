@@ -431,20 +431,6 @@ jobs:
           echo "xcarchive: $XCARCHIVE"
           echo "Profile UUID: $PROFILE_UUID"
 
-          # Inyectar URL scheme en el Info.plist del xcarchive antes del export
-          # (xcodegen regenera el Info.plist sin CFBundleURLTypes; lo añadimos aquí)
-          APP_PLIST=$(find "$XCARCHIVE/Products" -name "Info.plist" | head -1)
-          echo "Patching Info.plist: $APP_PLIST"
-          if [ -n "$APP_PLIST" ]; then
-            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$APP_PLIST" 2>/dev/null || true
-            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$APP_PLIST"
-            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string 'Link Fichajes Auth'" "$APP_PLIST"
-            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$APP_PLIST"
-            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string linkfichajes" "$APP_PLIST"
-            echo "URL scheme inyectado:"
-            /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$APP_PLIST"
-          fi
-
           # Crear ExportOptions.plist con method: ad-hoc y el UUID correcto
           python3 -c "
           import plistlib, os
@@ -482,6 +468,66 @@ jobs:
           echo "Found IPA: $IPA"
           cp "$IPA" dist-ios/LinkFichajes.ipa
           echo "IPA copiado como dist-ios/LinkFichajes.ipa"
+
+      # Inyectar URL scheme en el IPA exportado y re-firmar
+      # xcodebuild -exportArchive re-sign invalida cualquier cambio previo al Info.plist,
+      # así que lo modificamos POST-export: unzip → patch → re-sign → re-zip
+      - name: Inject URL scheme into IPA
+        if: steps.check_secrets.outputs.skip != 'true'
+        run: |
+          IPA="dist-ios/LinkFichajes.ipa"
+          WORK_DIR=$(mktemp -d)
+
+          echo "Descomprimiendo IPA..."
+          unzip -q "$IPA" -d "$WORK_DIR"
+
+          APP=$(find "$WORK_DIR/Payload" -name "*.app" -maxdepth 1 | head -1)
+          PLIST="$APP/Info.plist"
+          echo "Info.plist: $PLIST"
+
+          # Verificar estado actual
+          if /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$PLIST" &>/dev/null; then
+            echo "CFBundleURLTypes ya presente — no se necesita inyección"
+          else
+            echo "Inyectando CFBundleURLTypes..."
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string 'Link Fichajes Auth'" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string linkfichajes" "$PLIST"
+            echo "Scheme inyectado:"
+            /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$PLIST"
+          fi
+
+          # Re-firmar la app con el certificado de distribución ya en el keychain
+          ENTITLEMENTS=$(find "$APP" -name "*.entitlements" | head -1)
+          if [ -z "$ENTITLEMENTS" ]; then
+            # Extraer entitlements de la firma actual
+            codesign -d --entitlements :- "$APP" > /tmp/entitlements.plist 2>/dev/null || true
+            ENTITLEMENTS="/tmp/entitlements.plist"
+          fi
+          echo "Re-firmando con entitlements: $ENTITLEMENTS"
+          codesign --force --sign "Apple Distribution" \
+            --entitlements "$ENTITLEMENTS" \
+            --preserve-metadata=identifier,flags \
+            "$APP"
+          echo "Re-firma completada"
+
+          # Re-empaquetar el IPA
+          rm -f "$IPA"
+          cd "$WORK_DIR"
+          zip -qr "$OLDPWD/$IPA" Payload/
+          cd "$OLDPWD"
+          echo "IPA re-empaquetado: $(ls -lh $IPA)"
+          rm -rf "$WORK_DIR"
+
+          # Verificar que el scheme está en el IPA final
+          VERIFY_DIR=$(mktemp -d)
+          unzip -q "$IPA" -d "$VERIFY_DIR"
+          FINAL_APP=$(find "$VERIFY_DIR/Payload" -name "*.app" -maxdepth 1 | head -1)
+          echo "Verificación final CFBundleURLTypes:"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$FINAL_APP/Info.plist" || echo "ERROR: scheme no encontrado"
+          rm -rf "$VERIFY_DIR"
 
       # ── Subir IPA al release en tags ──────────────────────────────────────
       - name: Upload IPA to release
