@@ -1,5 +1,7 @@
 # Uncomment the next line to define a global platform for your project
 
+project 'link-vacaciones-widget.xcodeproj'
+
 target 'link-vacaciones-widget_iOS' do
 platform :ios, '14.0'
   # Pods for link-vacaciones-widget_iOS
