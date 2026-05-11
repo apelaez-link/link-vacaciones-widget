@@ -374,8 +374,19 @@ jobs:
         env:
           APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
+          set -euo pipefail
           PP_PATH="$RUNNER_TEMP/LinkFichajes.mobileprovision"
-          echo "$APPLE_PROVISIONING_PROFILE" | base64 --decode > "$PP_PATH"
+
+          # Limpiar whitespace/saltos de línea que pueden entrar al pegar en GitHub UI
+          echo "$APPLE_PROVISIONING_PROFILE" | tr -d ' \r\n' | base64 -D > "$PP_PATH"
+
+          # Verificar que el decode produjo un archivo válido
+          PP_SIZE=$(wc -c < "$PP_PATH")
+          echo "Decoded profile size: ${PP_SIZE} bytes"
+          if [ "$PP_SIZE" -lt 1000 ]; then
+            echo "ERROR: El perfil decodificado parece demasiado pequeño (${PP_SIZE} bytes). Probablemente el secret está mal formateado."
+            exit 1
+          fi
 
           # Extraer UUID del perfil (Tauri lo necesita para el ExportOptions.plist)
           UUID=$(security cms -D -i "$PP_PATH" | \
