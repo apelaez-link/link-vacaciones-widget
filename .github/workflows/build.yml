@@ -378,8 +378,8 @@ jobs:
           echo "$APPLE_PROVISIONING_PROFILE" | base64 --decode > "$PP_PATH"
 
           # Extraer UUID del perfil (Tauri lo necesita para el ExportOptions.plist)
-          UUID=$(security cms -D -i "$PP_PATH" | plutil -convert xml1 - -o - | \
-            python3 -c "import sys, plistlib; d = plistlib.load(sys.stdin.buffer); print(d['UUID'])")
+          UUID=$(security cms -D -i "$PP_PATH" | \
+            python3 -c "import sys, plistlib; d = plistlib.loads(sys.stdin.buffer.read()); print(d['UUID'])")
           echo "Profile UUID: $UUID"
           echo "profile_uuid=$UUID" >> $GITHUB_OUTPUT
 
