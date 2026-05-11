@@ -337,6 +337,11 @@ jobs:
         if: steps.check_secrets.outputs.skip != 'true'
         run: gem install cocoapods --no-document
 
+      - name: Install iOS Pods
+        if: steps.check_secrets.outputs.skip != 'true'
+        working-directory: src-tauri/gen/apple
+        run: pod install
+
       - name: Install JS dependencies
         if: steps.check_secrets.outputs.skip != 'true'
         run: npm ci
