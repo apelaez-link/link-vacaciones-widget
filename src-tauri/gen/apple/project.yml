@@ -53,6 +53,10 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
+        CFBundleURLTypes:
+          - CFBundleURLName: Link Fichajes Auth
+            CFBundleURLSchemes:
+              - linkfichajes
     entitlements:
       path: link-vacaciones-widget_iOS/link-vacaciones-widget_iOS.entitlements
     scheme:
