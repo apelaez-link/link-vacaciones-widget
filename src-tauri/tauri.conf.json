@@ -36,6 +36,9 @@
     "deep-link": {
       "desktop": [
         { "schemes": ["linkfichajes"] }
+      ],
+      "mobile": [
+        { "schemes": ["linkfichajes"] }
       ]
     }
   },
