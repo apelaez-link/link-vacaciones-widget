@@ -392,13 +392,14 @@ jobs:
         if: steps.check_secrets.outputs.skip != 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Tauri lee estas vars para generar ExportOptions.plist con signingCertificate + provisioningProfiles
           APPLE_SIGNING_IDENTITY: "Apple Distribution"
-          APPLE_PROVISIONING_PROFILE: ${{ steps.install_profile.outputs.profile_uuid }}
+          # Tauri necesita el contenido base64 del perfil (no el UUID) para generar
+          # provisioningProfiles en ExportOptions.plist y para instalar el perfil internamente
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
           npm run tauri ios build -- \
             --target aarch64 \
-            --export-method release-testing
+            --export-method ad-hoc
 
       - name: Find and rename IPA
         if: steps.check_secrets.outputs.skip != 'true'
