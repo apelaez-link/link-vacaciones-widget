@@ -388,26 +388,75 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"${UUID}.mobileprovision"
           echo "Installed: ~/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
 
-      - name: Build iOS app
+      # Tauri crea el xcarchive; el export falla (release-testing ≠ ad-hoc profile),
+      # pero continuamos y exportamos manualmente en el paso siguiente.
+      - name: Build iOS app (archive)
         if: steps.check_secrets.outputs.skip != 'true'
+        continue-on-error: true   # exportArchive fallará; el xcarchive SÍ queda en disco
+        id: tauri_archive
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_SIGNING_IDENTITY: "Apple Distribution"
-          # Tauri necesita el contenido base64 del perfil (no el UUID) para generar
-          # provisioningProfiles en ExportOptions.plist y para instalar el perfil internamente
           APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
           npm run tauri ios build -- \
             --target aarch64 \
             --export-method release-testing
 
+      # Export manual con ExportOptions.plist ad-hoc — bypass del export de Tauri
+      - name: Export IPA (ad-hoc manual)
+        if: steps.check_secrets.outputs.skip != 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROFILE_UUID: ${{ steps.install_profile.outputs.profile_uuid }}
+        run: |
+          # Encontrar el xcarchive generado por Tauri
+          XCARCHIVE=$(find src-tauri/gen/apple/build -name "*.xcarchive" 2>/dev/null | head -1)
+          if [ -z "$XCARCHIVE" ]; then
+            echo "ERROR: No se encontró xcarchive. Contenido del directorio:"
+            find src-tauri/gen/apple/build -ls 2>/dev/null || echo "(directorio no existe)"
+            exit 1
+          fi
+          echo "xcarchive: $XCARCHIVE"
+          echo "Profile UUID: $PROFILE_UUID"
+
+          # Crear ExportOptions.plist con method: ad-hoc y el UUID correcto
+          python3 -c "
+          import plistlib, os
+          plist = {
+              'method': 'ad-hoc',
+              'teamID': os.environ['APPLE_TEAM_ID'],
+              'signingCertificate': 'Apple Distribution',
+              'provisioningProfiles': {
+                  'link.smartcity.fichajes': os.environ['PROFILE_UUID']
+              },
+              'compileBitcode': False
+          }
+          with open('/tmp/ExportOptions.plist', 'wb') as f:
+              plistlib.dump(plist, f)
+          print('ExportOptions.plist creado')
+          "
+          cat /tmp/ExportOptions.plist
+
+          # Exportar IPA
+          mkdir -p dist-ios
+          xcodebuild -exportArchive \
+            -archivePath "$XCARCHIVE" \
+            -exportPath dist-ios \
+            -exportOptionsPlist /tmp/ExportOptions.plist
+
       - name: Find and rename IPA
         if: steps.check_secrets.outputs.skip != 'true'
         run: |
-          IPA=$(find src-tauri/gen/apple/build -name "*.ipa" | head -1)
+          # xcodebuild exportArchive deja el IPA en dist-ios/ con el nombre de la app
+          IPA=$(find dist-ios -name "*.ipa" | head -1)
+          if [ -z "$IPA" ]; then
+            echo "No IPA en dist-ios/, buscando en xcarchive build..."
+            IPA=$(find src-tauri/gen/apple/build -name "*.ipa" | head -1)
+          fi
           echo "Found IPA: $IPA"
-          mkdir -p dist-ios
           cp "$IPA" dist-ios/LinkFichajes.ipa
+          echo "IPA copiado como dist-ios/LinkFichajes.ipa"
 
       # ── Subir IPA al release en tags ──────────────────────────────────────
       - name: Upload IPA to release
