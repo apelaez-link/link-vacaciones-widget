@@ -378,7 +378,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           npm run tauri ios build -- \
-            --target aarch64-apple-ios \
+            --target aarch64 \
             --export-method ad-hoc
 
       - name: Find and rename IPA
