@@ -431,6 +431,20 @@ jobs:
           echo "xcarchive: $XCARCHIVE"
           echo "Profile UUID: $PROFILE_UUID"
 
+          # Inyectar URL scheme en el Info.plist del xcarchive antes del export
+          # (xcodegen regenera el Info.plist sin CFBundleURLTypes; lo añadimos aquí)
+          APP_PLIST=$(find "$XCARCHIVE/Products" -name "Info.plist" | head -1)
+          echo "Patching Info.plist: $APP_PLIST"
+          if [ -n "$APP_PLIST" ]; then
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$APP_PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$APP_PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string 'Link Fichajes Auth'" "$APP_PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$APP_PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string linkfichajes" "$APP_PLIST"
+            echo "URL scheme inyectado:"
+            /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$APP_PLIST"
+          fi
+
           # Crear ExportOptions.plist con method: ad-hoc y el UUID correcto
           python3 -c "
           import plistlib, os
