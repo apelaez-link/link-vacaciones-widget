@@ -367,20 +367,34 @@ jobs:
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
       # Instalar perfil de aprovisionamiento (ad-hoc)
+      # El perfil se instala con nombre UUID — xcodebuild lo requiere para el export
       - name: Install provisioning profile
         if: steps.check_secrets.outputs.skip != 'true'
+        id: install_profile
         env:
           APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
           PP_PATH="$RUNNER_TEMP/LinkFichajes.mobileprovision"
           echo "$APPLE_PROVISIONING_PROFILE" | base64 --decode > "$PP_PATH"
+
+          # Extraer UUID del perfil (Tauri lo necesita para el ExportOptions.plist)
+          UUID=$(security cms -D -i "$PP_PATH" | plutil -convert xml1 - -o - | \
+            python3 -c "import sys, plistlib; d = plistlib.load(sys.stdin.buffer); print(d['UUID'])")
+          echo "Profile UUID: $UUID"
+          echo "profile_uuid=$UUID" >> $GITHUB_OUTPUT
+
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+          # Instalar con nombre UUID (xcodebuild busca por UUID en exportArchive)
+          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"${UUID}.mobileprovision"
+          echo "Installed: ~/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
 
       - name: Build iOS app
         if: steps.check_secrets.outputs.skip != 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Tauri lee estas vars para generar ExportOptions.plist con signingCertificate + provisioningProfiles
+          APPLE_SIGNING_IDENTITY: "Apple Distribution"
+          APPLE_PROVISIONING_PROFILE: ${{ steps.install_profile.outputs.profile_uuid }}
         run: |
           npm run tauri ios build -- \
             --target aarch64 \
