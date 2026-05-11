@@ -9,7 +9,8 @@ src-tauri/target/
 # but track the key config files that need manual edits
 src-tauri/gen/apple/build/
 src-tauri/gen/apple/Externals/
-src-tauri/gen/apple/*.xcodeproj/
+# xcodeproj must be tracked — cargo tauri ios build needs it
+# src-tauri/gen/apple/*.xcodeproj/
 src-tauri/gen/android/.gradle/
 src-tauri/gen/android/build/
 src-tauri/gen/android/app/build/
