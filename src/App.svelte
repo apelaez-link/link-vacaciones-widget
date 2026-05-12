@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
   import LoginView from './components/LoginView.svelte';
+  import LoadingView from './components/LoadingView.svelte';
   import PopoverMain from './components/PopoverMain.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import { sessionToken, userName, userId, isAuthenticated } from './stores/auth';
@@ -17,8 +18,9 @@
   import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
   import { LogicalSize } from '@tauri-apps/api/window';
 
-  type View = 'login' | 'popover' | 'settings';
-  let view = $state<View>('login');
+  type View = 'loading' | 'login' | 'popover' | 'settings';
+  let view = $state<View>('loading');
+  let loadingMessage = $state('Cargando tus datos…');
 
   let pollInterval: ReturnType<typeof setInterval> | null = null;
   let tickInterval: ReturnType<typeof setInterval> | null = null;
@@ -79,6 +81,8 @@
     unlisten = await listen<string>('auth:token-received', async (event) => {
       const token = event.payload;
       sessionToken.set(token);
+      loadingMessage = 'Iniciando sesión…';
+      view = 'loading';
       await loadUserAndStatus();
       view = 'popover';
       startPolling();
@@ -151,6 +155,8 @@
       return;
     }
     sessionToken.set(token);
+    loadingMessage = 'Cargando tus datos…';
+    view = 'loading';
     await loadUserAndStatus();
     view = 'popover';
     startPolling();
@@ -209,11 +215,15 @@
 </script>
 
 <div class="app">
-  {#if view === 'login'}
+  {#if view === 'loading'}
+    <LoadingView message={loadingMessage} />
+  {:else if view === 'login'}
     <LoginView onTokenSaved={async () => {
       const token = await loadToken();
       if (token) {
         sessionToken.set(token);
+        loadingMessage = 'Iniciando sesión…';
+        view = 'loading';
         await loadUserAndStatus();
         view = 'popover';
         startPolling();
