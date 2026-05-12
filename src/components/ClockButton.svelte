@@ -45,7 +45,11 @@
     font-size: 13px; font-weight: 500; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
     font-family: inherit; transition: background 0.12s;
+    box-sizing: border-box;
   }
+  /* Botón único (Reanudar / Registrar entrada): ocupa el ancho completo
+     igual que los dos botones (Pausa+Salir) juntos */
+  .action > .btn { width: 100%; }
   .btn:disabled { opacity: 0.6; cursor: default; }
   .btn-in     { background: #34c759; color: white; }
   .btn-in:hover:not(:disabled)     { background: #2db34a; }
