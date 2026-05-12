@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { userName } from '../stores/auth';
+  import { userName, userId } from '../stores/auth';
   import { clearToken } from '../lib/auth';
   import { sessionToken } from '../stores/auth';
 
   import { isLoading } from '../stores/checkin';
   import Icon from './Icon.svelte';
+  import UserBadge from './UserBadge.svelte';
 
   const { onSettings, onSignOut, onRefresh }: {
     onSettings: () => void;
@@ -14,14 +15,11 @@
 
   let refreshing = $state(false);
 
-  function initials(name: string) {
-    return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  }
-
   async function handleSignOut() {
     await clearToken();
     sessionToken.set(null);
     userName.set(null);
+    userId.set(null);
     onSignOut();
   }
 
@@ -34,7 +32,11 @@
 
 <div class="header">
   <div class="user-row">
-    <div class="avatar">{$userName ? initials($userName) : '?'}</div>
+    {#if $userId && $userName}
+      <UserBadge userId={$userId} userName={$userName} size={34} />
+    {:else}
+      <div class="avatar-fallback">?</div>
+    {/if}
     <div class="user-info">
       <div class="name">{$userName ?? 'Usuario'}</div>
     </div>
@@ -49,7 +51,7 @@
 <style>
   .header { padding: 14px 16px 12px; border-bottom: 1px solid rgba(0,0,0,0.08); }
   .user-row { display: flex; align-items: center; gap: 10px; }
-  .avatar {
+  .avatar-fallback {
     width: 34px; height: 34px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 600;
@@ -77,8 +79,8 @@
     backdrop-filter: blur(40px) saturate(180%);
     border-bottom: 0.5px solid rgba(60,60,67,0.29);
   }
-  :global([data-platform="ios"]) .avatar {
-    width: 40px; height: 40px; border-radius: 50%;
+  :global([data-platform="ios"]) .avatar-fallback {
+    width: 40px; height: 40px;
     font-size: 15px; font-weight: 700;
     background: #D1E8FF; color: #0051A8;
   }
@@ -97,8 +99,8 @@
     border-bottom: none;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
-  :global([data-platform="android"]) .avatar {
-    width: 40px; height: 40px; border-radius: 50%;
+  :global([data-platform="android"]) .avatar-fallback {
+    width: 40px; height: 40px;
     font-size: 15px; font-weight: 600;
     background: #D3E2FF; color: #1A3A7A;
   }
@@ -114,7 +116,7 @@
 
   /* ── macOS: compact toolbar style ── */
   :global([data-platform="macos"]) .header { padding: 10px 14px 9px; }
-  :global([data-platform="macos"]) .avatar { width: 28px; height: 28px; font-size: 11px; }
+  :global([data-platform="macos"]) .avatar-fallback { width: 28px; height: 28px; font-size: 11px; }
   :global([data-platform="macos"]) .name { font-size: 12px; }
   :global([data-platform="macos"]) .icon-btn { font-size: 13px; padding: 3px 5px; border-radius: 5px; }
 </style>

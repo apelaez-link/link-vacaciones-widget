@@ -54,7 +54,7 @@ export async function resumeCheckin(id: string): Promise<CheckIn> {
   });
 }
 
-export async function fetchUserProfile(): Promise<{ name: string; email: string; role: string }> {
+export async function fetchUserProfile(): Promise<{ id: string; name: string; email: string; role: string }> {
   return apiFetch('/api/auth/me');
 }
 

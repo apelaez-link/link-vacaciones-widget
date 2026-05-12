@@ -4,7 +4,7 @@
   import LoginView from './components/LoginView.svelte';
   import PopoverMain from './components/PopoverMain.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
-  import { sessionToken, userName, isAuthenticated } from './stores/auth';
+  import { sessionToken, userName, userId, isAuthenticated } from './stores/auth';
   import { todayCheckin, pendingList, refTime, isLoading, weeklyMinutes } from './stores/checkin';
   import { settings } from './stores/settings';
   import { loadToken, clearToken } from './lib/auth';
@@ -165,6 +165,7 @@
         fetchUserSettings(),
       ]);
       userName.set(profile.name);
+      userId.set(profile.id);
       todayCheckin.set(status.today);
       pendingList.set(status.pending);
       refTime.set(status.ref_time);
