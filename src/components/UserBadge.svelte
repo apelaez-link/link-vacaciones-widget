@@ -19,18 +19,26 @@
   let wrapperEl: HTMLDivElement | undefined = $state();
   let quoteEl:   HTMLDivElement | undefined = $state();
   let quote:     QuoteState | null          = $state(null);
+  let flipped:   boolean                    = $state(false);
 
   let clickTimer: ReturnType<typeof setTimeout> | null = null;
   let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // En dispositivos táctiles no hay hover, así que el flip se controla con tap.
+  const isTouch = typeof window !== 'undefined' &&
+    window.matchMedia?.('(hover: none)').matches;
 
   onDestroy(() => {
     if (clickTimer) clearTimeout(clickTimer);
     if (closeTimer) clearTimeout(closeTimer);
   });
 
-  // Auto-cierre tras 3.5s
+  // Auto-cierre tras 3.5s + apaga el flip táctil cuando se cierra
   $effect(() => {
-    if (!quote) return;
+    if (!quote) {
+      flipped = false;
+      return;
+    }
     if (closeTimer) clearTimeout(closeTimer);
     closeTimer = setTimeout(() => { quote = null; }, 3500);
     return () => { if (closeTimer) clearTimeout(closeTimer); };
@@ -74,6 +82,8 @@
 
   function handleClick() {
     if (clickTimer) clearTimeout(clickTimer);
+    // En táctil, feedback visual inmediato del flip (no hay hover que lo dispare)
+    if (isTouch) flipped = true;
     clickTimer = setTimeout(() => {
       if (!wrapperEl) return;
       const r  = wrapperEl.getBoundingClientRect();
@@ -86,11 +96,17 @@
       const spaceRight  = window.innerWidth  - r.right;
       const spaceLeft   = r.left;
 
+      // Si el badge está en el tercio superior de la pantalla (caso típico
+      // del header del widget), evita "top" para no chocar con status bar /
+      // notch / dynamic island.
+      const inTopThird = r.top < window.innerHeight / 3;
+      const allowTop   = !inTopThird;
+
       let side: Side;
-      if (spaceTop >= TOOLTIP_H + 12)        side = 'top';
-      else if (spaceRight >= TOOLTIP_W + 12) side = 'right';
-      else if (spaceBottom >= TOOLTIP_H + 12) side = 'bottom';
-      else if (spaceLeft >= TOOLTIP_W + 12)  side = 'left';
+      if (allowTop && spaceTop >= TOOLTIP_H + 12) side = 'top';
+      else if (spaceBottom >= TOOLTIP_H + 12)     side = 'bottom';
+      else if (spaceRight  >= TOOLTIP_W + 12)     side = 'right';
+      else if (spaceLeft   >= TOOLTIP_W + 12)     side = 'left';
       else side = 'bottom';
 
       quote = { badgeCx: cx, badgeCy: cy, side };
@@ -99,6 +115,7 @@
 
   function handleDoubleClick() {
     if (clickTimer) clearTimeout(clickTimer);
+    flipped = false;
     openUrl('https://vacaciones.smartcity.link/admin/icons').catch(() => {});
   }
 
@@ -107,7 +124,7 @@
 
 <div
   bind:this={wrapperEl}
-  class="badge-flip"
+  class="badge-flip {flipped ? 'flipped' : ''}"
   style="width: {size}px; height: {size}px;"
   onclick={handleClick}
   ondblclick={handleDoubleClick}
@@ -164,8 +181,10 @@
   }
   .badge-face.front { transform: rotateY(0deg);   z-index: 2; }
   .badge-face.back  { transform: rotateY(180deg); z-index: 1; overflow: hidden; }
-  .badge-flip:hover .badge-face.front { transform: rotateY(-180deg); }
-  .badge-flip:hover .badge-face.back  { transform: rotateY(0deg); }
+  .badge-flip:hover .badge-face.front,
+  .badge-flip.flipped .badge-face.front { transform: rotateY(-180deg); }
+  .badge-flip:hover .badge-face.back,
+  .badge-flip.flipped .badge-face.back  { transform: rotateY(0deg); }
   .icon-wrap {
     transition: transform 200ms ease;
     transform-origin: center;
@@ -201,33 +220,33 @@
   @keyframes ico-cone-fly        { 0% { transform: translate(-10px,6px) rotate(-25deg); } 50% { transform: translate(10px,-12px) rotate(25deg); } 100% { transform: translate(-10px,6px) rotate(-25deg); } }
 
   /* Aplican solo cuando se hace hover del badge */
-  .badge-flip:hover .icon-wrap.anim-bin-wave        { animation: ico-bin-wave        1.0s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-bin-pleading    { animation: ico-bin-pleading    0.7s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-bin-twirl       { animation: ico-bin-twirl       1.8s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-bin-breathe     { animation: ico-bin-breathe     2.6s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-truck-drive     { animation: ico-truck-drive     1.5s ease-in-out infinite alternate; }
-  .badge-flip:hover .icon-wrap.anim-sweeper-sweep   { animation: ico-sweeper-sweep   0.9s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-robot-glitch    { animation: ico-robot-glitch    0.35s steps(3)   infinite; }
-  .badge-flip:hover .icon-wrap.anim-captain-sail    { animation: ico-captain-sail    1.6s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-broom-sweep     { animation: ico-broom-sweep     0.5s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-mop-circular    { animation: ico-mop-circular    1.2s linear      infinite; }
-  .badge-flip:hover .icon-wrap.anim-bucket-wobble   { animation: ico-bucket-wobble   0.9s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-bottle-roll     { animation: ico-bottle-roll     1.6s ease-in-out infinite alternate; }
-  .badge-flip:hover .icon-wrap.anim-box-squash      { animation: ico-box-squash      1.2s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-can-crush       { animation: ico-can-crush       1.4s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-bag-breathe     { animation: ico-bag-breathe     2.0s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-oil-pour        { animation: ico-oil-pour        1.8s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-battery-zap     { animation: ico-battery-zap     0.8s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-raccoon-sniff   { animation: ico-raccoon-sniff   0.7s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-boar-charge     { animation: ico-boar-charge     1.2s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-leaf-fall       { animation: ico-leaf-fall       2.4s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-drop-bounce     { animation: ico-drop-bounce     1.4s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-cone-peek       { animation: ico-cone-peek       1.2s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-cone-wink-pulse { animation: ico-cone-wink-pulse 1.0s ease-in-out infinite; }
-  .badge-flip:hover .icon-wrap.anim-cone-fly        { animation: ico-cone-fly        1.8s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bin-wave        { animation: ico-bin-wave        1.0s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bin-pleading    { animation: ico-bin-pleading    0.7s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bin-twirl       { animation: ico-bin-twirl       1.8s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bin-breathe     { animation: ico-bin-breathe     2.6s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-truck-drive     { animation: ico-truck-drive     1.5s ease-in-out infinite alternate; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-sweeper-sweep   { animation: ico-sweeper-sweep   0.9s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-robot-glitch    { animation: ico-robot-glitch    0.35s steps(3)   infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-captain-sail    { animation: ico-captain-sail    1.6s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-broom-sweep     { animation: ico-broom-sweep     0.5s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-mop-circular    { animation: ico-mop-circular    1.2s linear      infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bucket-wobble   { animation: ico-bucket-wobble   0.9s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bottle-roll     { animation: ico-bottle-roll     1.6s ease-in-out infinite alternate; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-box-squash      { animation: ico-box-squash      1.2s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-can-crush       { animation: ico-can-crush       1.4s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-bag-breathe     { animation: ico-bag-breathe     2.0s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-oil-pour        { animation: ico-oil-pour        1.8s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-battery-zap     { animation: ico-battery-zap     0.8s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-raccoon-sniff   { animation: ico-raccoon-sniff   0.7s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-boar-charge     { animation: ico-boar-charge     1.2s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-leaf-fall       { animation: ico-leaf-fall       2.4s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-drop-bounce     { animation: ico-drop-bounce     1.4s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-cone-peek       { animation: ico-cone-peek       1.2s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-cone-wink-pulse { animation: ico-cone-wink-pulse 1.0s ease-in-out infinite; }
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap.anim-cone-fly        { animation: ico-cone-fly        1.8s ease-in-out infinite; }
 
   /* La animación del personaje arranca DESPUÉS del flip (0.55s) */
-  .badge-flip:hover .icon-wrap[class*="anim-"] {
+  :is(.badge-flip:hover, .badge-flip.flipped) .icon-wrap[class*="anim-"] {
     animation-delay: 0.55s;
   }
 
