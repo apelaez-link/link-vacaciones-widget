@@ -7,10 +7,7 @@ use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg(desktop)]
-use tauri::{
-    tray::{TrayIconBuilder, TrayIconEvent},
-    WindowEvent,
-};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -91,8 +88,24 @@ pub fn run() {
                                     let y = iy + ih + 4.0;
                                     let _ = window
                                         .set_position(tauri::PhysicalPosition::new(x, y));
+                                    // Reaplicar config nativa ANTES del show: el level/collectionBehavior
+                                    // puede haberse perdido tras hide() o set_position().
+                                    #[cfg(target_os = "macos")]
+                                    configure_popover_for_fullscreen(&window);
                                     let _ = window.show();
                                     let _ = window.set_focus();
+                                    // Y también DESPUÉS — algunos parámetros (especialmente level)
+                                    // los reescribe Tauri en orderFront a NSFloatingWindowLevel.
+                                    #[cfg(target_os = "macos")]
+                                    {
+                                        configure_popover_for_fullscreen(&window);
+                                        // makeKeyWindow explícito: Tauri usa makeKeyAndOrderFront
+                                        // pero ese path puede saltarse el makeKey si la ventana
+                                        // antes era NSWindow y se ha re-clasificado en runtime.
+                                        make_popover_key(&window);
+                                        // Asegurar que la WKWebView reciba los keyDown.
+                                        force_webview_first_responder(&window);
+                                    }
                                     let _ = window.emit("widget-focused", ());
                                 }
                             }
@@ -100,19 +113,29 @@ pub fn run() {
                     })
                     .build(app)?;
 
+                // Popover debe aparecer sobre apps en pantalla completa (Chrome, Teams, …).
+                // Sin esto, NSWindow vive en el Space del escritorio y al hacer show()
+                // desde un Space fullscreen macOS no la muestra.
+                #[cfg(target_os = "macos")]
+                if let Some(popover) = app.get_webview_window("popover") {
+                    configure_popover_for_fullscreen(&popover);
+                }
+
+                // Cerrar popover al clicar fuera (compensa que NonactivatingPanel impide
+                // que el panel se vuelva key window y dispare el evento Focused(false)).
+                #[cfg(target_os = "macos")]
+                install_global_click_monitor(app.handle());
+
                 register_sleep_listener(app.handle().clone());
             }
 
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Auto-hide popover on focus loss (macOS only)
-            #[cfg(desktop)]
-            if let WindowEvent::Focused(false) = event {
-                if window.label() == "popover" {
-                    let _ = window.hide();
-                }
-            }
+            // No ocultamos el popover en Focused(false): en pantalla completa, mover el ratón
+            // muestra la menu bar y el sistema le quita el foco a la panel, lo que dispararía
+            // este evento y cerraría el popover en cuanto el usuario mueve el cursor.
+            // El cierre por "clic fuera" lo gestiona install_global_click_monitor.
             let _ = (window, event);
         })
         .build(tauri::generate_context!())
@@ -214,6 +237,147 @@ fn percent_decode(s: &str) -> String {
         i += 1;
     }
     result
+}
+
+/// Subclase dinámica de NSPanel que sobrescribe `canBecomeKeyWindow` para devolver YES
+/// incluso con NonactivatingPanel. Con el mask por defecto NSPanel devuelve NO y los inputs
+/// (login, ajustes) no reciben teclado. Forzando YES, el panel sí recibe input — y como
+/// mantenemos NonactivatingPanel, activarse como key no activa la app ni la saca del
+/// Space fullscreen donde apareció.
+#[cfg(target_os = "macos")]
+fn link_panel_class() -> &'static objc2::runtime::AnyClass {
+    use objc2::declare::ClassBuilder;
+    use objc2::runtime::{AnyObject, Bool, Sel};
+    use objc2::{sel, ClassType};
+    use objc2_app_kit::NSPanel;
+    use std::sync::OnceLock;
+
+    static CLASS: OnceLock<&'static objc2::runtime::AnyClass> = OnceLock::new();
+    CLASS.get_or_init(|| {
+        let mut builder = ClassBuilder::new(c"LinkPanel", NSPanel::class())
+            .expect("LinkPanel class already registered");
+
+        extern "C" fn can_become_key_window(_: *mut AnyObject, _: Sel) -> Bool {
+            Bool::YES
+        }
+
+        unsafe {
+            builder.add_method(
+                sel!(canBecomeKeyWindow),
+                can_become_key_window as extern "C" fn(*mut AnyObject, Sel) -> Bool,
+            );
+        }
+
+        builder.register()
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn configure_popover_for_fullscreen(window: &tauri::WebviewWindow) {
+    use objc2::runtime::AnyObject;
+    use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask};
+
+    let ns_window_ptr = match window.ns_window() {
+        Ok(ptr) if !ptr.is_null() => ptr as *mut NSWindow,
+        Ok(_) => {
+            eprintln!("[widget] configure_popover_for_fullscreen: ns_window() devolvió null");
+            return;
+        }
+        Err(e) => {
+            eprintln!("[widget] configure_popover_for_fullscreen: ns_window() error: {e}");
+            return;
+        }
+    };
+
+    let behavior = NSWindowCollectionBehavior::CanJoinAllSpaces
+        | NSWindowCollectionBehavior::FullScreenAuxiliary
+        | NSWindowCollectionBehavior::Stationary;
+
+    // NSStatusWindowLevel = 25 — por encima de la menu bar (24), debajo de los pop-up menus (101).
+    const NS_STATUS_WINDOW_LEVEL: isize = 25;
+
+    unsafe {
+        // macOS solo permite que aparezcan sobre apps fullscreen las ventanas que son NSPanel
+        // (NSWindow normal no sirve, ni siquiera con fullScreenAuxiliary). Reescribimos la clase
+        // a una subclase de NSPanel que también acepta volverse key window (para los inputs).
+        let obj_ptr: *mut AnyObject = ns_window_ptr as *mut AnyObject;
+        let _ = AnyObject::set_class(&*obj_ptr, link_panel_class());
+
+        let win: &NSWindow = &*ns_window_ptr;
+
+        // NonactivatingPanel es necesario: sin él el panel no aparece sobre apps fullscreen.
+        // Como contrapartida, el panel nunca se vuelve key window y por tanto el evento
+        // `Focused(false)` no se dispara — el auto-hide al clicar fuera lo resolvemos con un
+        // global mouse monitor (ver install_global_click_monitor).
+        let style = NSWindowStyleMask::Borderless | NSWindowStyleMask::NonactivatingPanel;
+        win.setStyleMask(style);
+
+        win.setCollectionBehavior(behavior);
+        win.setLevel(NS_STATUS_WINDOW_LEVEL);
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn make_popover_key(window: &tauri::WebviewWindow) {
+    use objc2_app_kit::NSWindow;
+
+    let Ok(ptr) = window.ns_window() else { return };
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let win: &NSWindow = &*(ptr as *const NSWindow);
+        win.makeKeyWindow();
+    }
+}
+
+/// Aunque la NSPanel sea key window, los keyDown van a su firstResponder. Tras
+/// re-clasificar la ventana a LinkPanel/NSPanel, la WKWebView interna deja de ser
+/// firstResponder y los inputs no reciben teclado. Forzamos que vuelva a serlo.
+#[cfg(target_os = "macos")]
+fn force_webview_first_responder(window: &tauri::WebviewWindow) {
+    let _ = window.with_webview(|webview| {
+        use objc2::msg_send;
+        use objc2::runtime::AnyObject;
+
+        let ns_window_ptr: *mut AnyObject = webview.ns_window() as *mut AnyObject;
+        let wk_webview_ptr: *mut AnyObject = webview.inner() as *mut AnyObject;
+
+        if ns_window_ptr.is_null() || wk_webview_ptr.is_null() {
+            eprintln!("[widget] force_webview_first_responder: punteros nulos");
+            return;
+        }
+
+        unsafe {
+            let _: bool = msg_send![ns_window_ptr, makeFirstResponder: wk_webview_ptr];
+        }
+    });
+}
+
+#[cfg(target_os = "macos")]
+fn install_global_click_monitor(app: &tauri::AppHandle) {
+    use block2::RcBlock;
+    use objc2_app_kit::{NSEvent, NSEventMask};
+    use std::ptr::NonNull;
+
+    let handle = app.clone();
+    let block = RcBlock::new(move |_event: NonNull<NSEvent>| {
+        // El global monitor solo recibe eventos de OTRAS apps. Si llega un mouse-down,
+        // el clic fue fuera del popover → ocultamos.
+        if let Some(window) = handle.get_webview_window("popover") {
+            if window.is_visible().unwrap_or(false) {
+                let _ = window.hide();
+            }
+        }
+    });
+
+    let mask = NSEventMask::LeftMouseDown
+        | NSEventMask::RightMouseDown
+        | NSEventMask::OtherMouseDown;
+    let monitor = NSEvent::addGlobalMonitorForEventsMatchingMask_handler(mask, &block);
+    // El monitor debe permanecer vivo durante toda la vida de la app. Filtrarlo es OK:
+    // se libera cuando el proceso termina.
+    std::mem::forget(monitor);
 }
 
 #[cfg(desktop)]
