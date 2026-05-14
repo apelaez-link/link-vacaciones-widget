@@ -323,11 +323,19 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup Rust
+      # macos-15 viene con un rustup pre-instalado cuyos shims de `cargo` están rotos
+      # (ejecutar `cargo` invoca rustup-init con argv extraños). Reinstalamos rustup
+      # desde cero con rustup.rs para reparar los shims.
+      - name: Setup Rust (clean install)
         if: steps.check_secrets.outputs.skip != 'true'
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-ios
+        run: |
+          rm -rf "$HOME/.cargo" "$HOME/.rustup"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --default-toolchain stable --profile minimal \
+                       --target aarch64-apple-ios --no-modify-path
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          "$HOME/.cargo/bin/cargo" --version
+          "$HOME/.cargo/bin/rustc" --version
 
       - name: Cache Rust build
         if: steps.check_secrets.outputs.skip != 'true'
@@ -400,18 +408,6 @@ jobs:
           # Instalar con nombre UUID (xcodebuild busca por UUID en exportArchive)
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"${UUID}.mobileprovision"
           echo "Installed: ~/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
-
-      # En macos-15 (May 2026) el shim de `cargo` queda apuntando a `rustup-init` y
-      # `cargo metadata` falla cuando Tauri lo invoca. Forzamos el default y verificamos.
-      - name: Verify Rust toolchain (iOS)
-        if: steps.check_secrets.outputs.skip != 'true'
-        run: |
-          rustup default stable
-          rustup target add aarch64-apple-ios
-          echo "PATH=$PATH"
-          which cargo
-          cargo --version
-          rustc --version
 
       # Tauri crea el xcarchive; el export falla (release-testing ≠ ad-hoc profile),
       # pero continuamos y exportamos manualmente en el paso siguiente.
