@@ -401,6 +401,18 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"${UUID}.mobileprovision"
           echo "Installed: ~/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
 
+      # En macos-15 (May 2026) el shim de `cargo` queda apuntando a `rustup-init` y
+      # `cargo metadata` falla cuando Tauri lo invoca. Forzamos el default y verificamos.
+      - name: Verify Rust toolchain (iOS)
+        if: steps.check_secrets.outputs.skip != 'true'
+        run: |
+          rustup default stable
+          rustup target add aarch64-apple-ios
+          echo "PATH=$PATH"
+          which cargo
+          cargo --version
+          rustc --version
+
       # Tauri crea el xcarchive; el export falla (release-testing ≠ ad-hoc profile),
       # pero continuamos y exportamos manualmente en el paso siguiente.
       - name: Build iOS app (archive)
