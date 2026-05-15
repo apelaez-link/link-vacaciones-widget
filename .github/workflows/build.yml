@@ -48,10 +48,19 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      # El rustup pre-instalado en macos-14/15 trae el shim de `cargo` roto
+      # (delega a rustup-init y `cargo metadata` falla con "unexpected argument").
+      # Reinstalamos rustup desde rustup.rs para reparar los shims.
+      - name: Setup Rust (clean install)
+        run: |
+          rm -rf "$HOME/.cargo" "$HOME/.rustup"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --default-toolchain stable --profile minimal \
+                       --target aarch64-apple-darwin,x86_64-apple-darwin \
+                       --no-modify-path
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          "$HOME/.cargo/bin/cargo" --version
+          "$HOME/.cargo/bin/rustc" --version
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
