@@ -41,6 +41,11 @@ pub fn run() {
 
     builder
         .setup(|app| {
+            // macOS: forzar accessory policy en runtime. LSUIElement=true en Info.plist no basta —
+            // el runtime de Tauri arranca con Regular y eso hace aparecer el icono en Dock/Cmd+Tab.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             // Register URL scheme at runtime (macOS dev mode)
             #[cfg(target_os = "macos")]
             if let Err(e) = app.deep_link().register("linkfichajes") {
