@@ -1,6 +1,6 @@
 {
   "name": "link-vacaciones-widget",
-  "version": "0.3.31",
+  "version": "0.3.32",
   "description": "Link Fichajes — macOS Menu Bar Widget",
   "type": "module",
   "scripts": {

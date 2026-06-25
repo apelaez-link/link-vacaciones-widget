@@ -5,6 +5,7 @@ pub fn update_icon(app: &AppHandle, state: &str, label: Option<&str>) -> Result<
 
     let icon_bytes: &[u8] = match state {
         "clocked_in" => include_bytes!("../icons/tray-in.png"),
+        "paused" => include_bytes!("../icons/tray-paused.png"),
         "clocked_out" => include_bytes!("../icons/tray-out.png"),
         _ => include_bytes!("../icons/tray-default.png"),
     };
@@ -15,6 +16,8 @@ pub fn update_icon(app: &AppHandle, state: &str, label: Option<&str>) -> Result<
     let tooltip = match (state, label) {
         ("clocked_in", Some(l)) => format!("Link Fichajes · {}", l),
         ("clocked_in", None) => "Link Fichajes · Fichado".into(),
+        ("paused", Some(l)) => format!("Link Fichajes · En pausa · {}", l),
+        ("paused", None) => "Link Fichajes · En pausa".into(),
         ("clocked_out", _) => "Link Fichajes · Sin fichar".into(),
         _ => "Link Fichajes".into(),
     };

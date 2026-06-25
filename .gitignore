@@ -46,6 +46,7 @@ src-tauri/gen/apple/Pods/
 src-tauri/gen/apple/Podfile.lock
 src-tauri/gen/apple/link-vacaciones-widget.xcworkspace/
 debug.keystore
+*.jks
 
 # Certificados locales (nunca commitear)
 certs/

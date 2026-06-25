@@ -64,6 +64,7 @@
     try {
       const result = await pauseCheckin(checkin.id);
       todayCheckin.set(result);
+      await syncTrayIcon(result);
     } catch (e) {
       apiError = (e as Error).message;
     } finally {
@@ -79,6 +80,7 @@
     try {
       const result = await resumeCheckin(checkin.id);
       todayCheckin.set(result);
+      await syncTrayIcon(result);
     } catch (e) {
       apiError = (e as Error).message;
     } finally {
